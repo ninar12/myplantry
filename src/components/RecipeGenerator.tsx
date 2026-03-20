@@ -1,95 +1,109 @@
 "use client";
 
+import { useState } from "react";
 import { usePantry } from "@/context/PantryContext";
-import { Sparkles, Loader2, CheckCircle2, ChevronRight } from "lucide-react";
+import { Sparkles, Loader2, BookmarkPlus, BookmarkCheck, CheckCircle2 } from "lucide-react";
 
 export default function RecipeGenerator() {
-  const { generateRecipe, isGenerating, recipes } = usePantry();
-  
+  const { generateRecipe, isGenerating, recipes, saveRecipe, savedRecipes } = usePantry();
+  const [isSaving, setIsSaving] = useState(false);
+
   const latestRecipe = recipes[0];
+  const isAlreadySaved = latestRecipe
+    ? savedRecipes.some((r) => r.title === latestRecipe.title)
+    : false;
+
+  const handleSave = async () => {
+    if (!latestRecipe || isAlreadySaved) return;
+    setIsSaving(true);
+    try {
+      await saveRecipe(latestRecipe);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* CTA Card */}
-      <div className="bg-[#0B4D26] text-white rounded-2xl p-6 shadow-md relative overflow-hidden group transition-all hover:shadow-lg">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#207245] rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/4"></div>
-        <h2 className="font-bold mb-2 text-xl relative z-10">Cook what you have</h2>
-        <p className="text-white/80 text-sm mb-6 relative z-10 w-[85%]">
-          Stop throwing away expired food. Let AI generate a delicious meal with your current ingredients.
-        </p>
-        
-        <button 
+    <div className="flex flex-col gap-4">
+      {/* Slim banner */}
+      <div className="bg-[#0B4D26] rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="font-semibold text-white text-sm leading-tight">Cook what you have</h2>
+          <p className="text-white/50 text-xs mt-0.5">AI-generated from your pantry ingredients.</p>
+        </div>
+        <button
           onClick={generateRecipe}
           disabled={isGenerating}
-          className="w-full relative z-10 h-12 bg-[#FFC629] text-[#0B4D26] rounded-xl flex items-center justify-center font-bold overflow-hidden group-hover:bg-[#fbbb21] transition-colors disabled:opacity-80 disabled:cursor-not-allowed cursor-pointer"
+          className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-[#FFC629] text-[#0B4D26] rounded-xl text-sm font-bold hover:bg-[#fbbb21] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Crafting recipe...
-            </span>
+            <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
           ) : (
-            <span className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
-              Generate Recipe
-            </span>
+            <><Sparkles className="w-4 h-4" /> Generate Recipe</>
           )}
         </button>
       </div>
 
-      {/* Latest Recipe Result */}
-      {latestRecipe && !isGenerating && (
-        <div className="bg-white border-2 border-[#207245]/20 rounded-2xl p-6 shadow-sm overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#FFC629] to-[#207245]"></div>
-          
-          <div className="flex items-start justify-between mb-4">
+      {/* Freshly generated recipe — shown inline until saved */}
+      {latestRecipe && !isGenerating && !isAlreadySaved && (
+        <div className="bg-white border border-[#207245]/20 rounded-xl overflow-hidden">
+          <div className="px-5 pt-4 pb-3 border-b border-[#0B4D26]/6 flex items-start justify-between gap-3">
             <div>
-              <span className="text-[#FFC629] text-xs font-bold tracking-wider uppercase flex items-center gap-1 mb-1">
-                <Sparkles className="w-3 h-3" /> AI Generated
+              <span className="text-[10px] font-bold tracking-widest uppercase text-[#FFC629] flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Just generated
               </span>
-              <h3 className="text-2xl font-bold text-[#0B4D26] leading-tight">
-                {latestRecipe.title}
-              </h3>
+              <h3 className="font-bold text-[#0B4D26] text-base mt-0.5 leading-tight">{latestRecipe.title}</h3>
             </div>
             {latestRecipe.match_percentage && (
-              <div className="bg-[#207245]/10 text-[#207245] px-3 py-1 rounded-xl text-sm font-bold flex flex-col items-center">
-                <span>{latestRecipe.match_percentage}%</span>
-                <span className="text-[10px] uppercase font-semibold">Match</span>
-              </div>
+              <span className="flex-shrink-0 text-xs font-bold text-[#207245] bg-[#207245]/10 px-2.5 py-1 rounded-full">
+                {latestRecipe.match_percentage}% match
+              </span>
             )}
           </div>
 
-          <div className="mb-6">
-            <h4 className="font-semibold text-[#0B4D26] mb-3 text-sm uppercase tracking-wide">Ingredients</h4>
-            <ul className="grid grid-cols-2 gap-2">
+          <div className="px-5 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#0B4D26]/40 mb-2">Ingredients</p>
+            <ul className="grid grid-cols-2 gap-1.5 mb-4">
               {latestRecipe.ingredients.map((ing, idx) => (
-                <li key={idx} className="flex items-center gap-2 text-sm text-[#0B4D26]/80 bg-gray-50 p-2 rounded-lg">
-                  <CheckCircle2 className="w-4 h-4 text-[#207245]" />
+                <li key={idx} className="flex items-center gap-1.5 text-xs text-[#0B4D26]/80 bg-gray-50 px-2.5 py-1.5 rounded-lg">
+                  <CheckCircle2 className="w-3 h-3 text-[#207245] flex-shrink-0" />
                   {ing}
                 </li>
               ))}
             </ul>
-          </div>
 
-          <div>
-            <h4 className="font-semibold text-[#0B4D26] mb-3 text-sm uppercase tracking-wide">Instructions</h4>
-            <ol className="space-y-4">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#0B4D26]/40 mb-2">Instructions</p>
+            <ol className="space-y-2.5 mb-4">
               {latestRecipe.instructions.map((step, idx) => (
-                <li key={idx} className="flex gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-md bg-[#FFC629]/20 text-[#0B4D26] flex items-center justify-center font-bold text-sm">
+                <li key={idx} className="flex gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-md bg-[#FFC629]/20 text-[#0B4D26] flex items-center justify-center font-bold text-xs">
                     {idx + 1}
-                  </div>
-                  <p className="text-[#0B4D26]/80 text-sm leading-relaxed pt-0.5">
-                    {step}
-                  </p>
+                  </span>
+                  <p className="text-xs text-[#0B4D26]/70 leading-relaxed pt-0.5">{step}</p>
                 </li>
               ))}
             </ol>
+
+            <button
+              onClick={handleSave}
+              disabled={isSaving || isAlreadySaved}
+              className="w-full py-2.5 rounded-xl border border-[#0B4D26]/10 text-[#0B4D26] text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSaving ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+              ) : (
+                <><BookmarkPlus className="w-4 h-4" /> Save to collection</>
+              )}
+            </button>
           </div>
-          
-          <button className="w-full mt-8 py-3 rounded-xl border border-[#0B4D26]/10 text-[#0B4D26] font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 cursor-pointer">
-            Save to Plan <ChevronRight className="w-4 h-4" />
-          </button>
+        </div>
+      )}
+
+      {/* Saved confirmation */}
+      {latestRecipe && !isGenerating && isAlreadySaved && (
+        <div className="flex items-center gap-2 text-xs text-[#207245] bg-[#207245]/8 border border-[#207245]/15 px-4 py-2.5 rounded-xl">
+          <BookmarkCheck className="w-4 h-4" />
+          <span className="font-medium">&ldquo;{latestRecipe.title}&rdquo; saved to your collection.</span>
         </div>
       )}
     </div>
