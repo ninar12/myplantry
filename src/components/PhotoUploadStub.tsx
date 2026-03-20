@@ -1,56 +1,61 @@
-"use client";
+"use client"
 
-import { useRef, useState } from "react";
-import { Camera, Receipt, Loader2, Sparkles, X } from "lucide-react";
-import { usePantry } from "@/context/PantryContext";
+import { useRef, useState } from "react"
+import { Camera, Receipt, Loader2, Sparkles, X } from "lucide-react"
+import { usePantry } from "@/context/PantryContext"
 
-type ScanType = "receipt" | "fridge" | "handwritten";
+type ScanType = "receipt" | "fridge" | "handwritten"
 
 interface ScannedItem {
-  name: string;
-  category: string;
-  quantity: number;
-  expiration_date: string;
-  location: string;
+  name: string
+  category: string
+  quantity: number
+  expiration_date: string
+  location: string
+  opened?: boolean
 }
 
-export default function PhotoUploadStub({ scanType = "receipt" }: { scanType?: ScanType }) {
-  const { addItem, checkPantryDuplicate } = usePantry();
-  const [isScanning, setIsScanning] = useState(false);
-  const [skippedItems, setSkippedItems] = useState<ScannedItem[]>([]);
-  const [showSkippedBanner, setShowSkippedBanner] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+export default function PhotoUploadStub({
+  scanType = "receipt",
+}: {
+  scanType?: ScanType
+}) {
+  const { addItem, checkPantryDuplicate } = usePantry()
+  const [isScanning, setIsScanning] = useState(false)
+  const [skippedItems, setSkippedItems] = useState<ScannedItem[]>([])
+  const [showSkippedBanner, setShowSkippedBanner] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]
+    if (!file) return
 
-    setIsScanning(true);
-    setShowSkippedBanner(false);
-    setSkippedItems([]);
+    setIsScanning(true)
+    setShowSkippedBanner(false)
+    setSkippedItems([])
 
-    const reader = new FileReader();
+    const reader = new FileReader()
     reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      const [meta, base64] = dataUrl.split(",");
-      const mimeType = meta.match(/:(.*?);/)?.[1] ?? "image/jpeg";
+      const dataUrl = reader.result as string
+      const [meta, base64] = dataUrl.split(",")
+      const mimeType = meta.match(/:(.*?);/)?.[1] ?? "image/jpeg"
 
       try {
         const res = await fetch("/api/scan-image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image: base64, mimeType, type: scanType }),
-        });
+        })
 
-        const { items } = await res.json();
-        const newItems: ScannedItem[] = [];
-        const duplicates: ScannedItem[] = [];
+        const { items } = await res.json()
+        const newItems: ScannedItem[] = []
+        const duplicates: ScannedItem[] = []
 
         for (const item of items as ScannedItem[]) {
           if (checkPantryDuplicate(item.name)) {
-            duplicates.push(item);
+            duplicates.push(item)
           } else {
-            newItems.push(item);
+            newItems.push(item)
           }
         }
 
@@ -61,23 +66,24 @@ export default function PhotoUploadStub({ scanType = "receipt" }: { scanType?: S
             quantity: item.quantity ?? 1,
             expiration_date: item.expiration_date,
             location: item.location === "pantry" ? "pantry" : "fridge",
-          });
+            opened: item.opened ?? false,
+          })
         }
 
         if (duplicates.length > 0) {
-          setSkippedItems(duplicates);
-          setShowSkippedBanner(true);
+          setSkippedItems(duplicates)
+          setShowSkippedBanner(true)
         }
       } catch (err) {
-        console.error("Scan failed:", err);
+        console.error("Scan failed:", err)
       } finally {
-        setIsScanning(false);
-        if (inputRef.current) inputRef.current.value = "";
+        setIsScanning(false)
+        if (inputRef.current) inputRef.current.value = ""
       }
-    };
+    }
 
-    reader.readAsDataURL(file);
-  };
+    reader.readAsDataURL(file)
+  }
 
   const addSkippedItems = async () => {
     for (const item of skippedItems) {
@@ -87,11 +93,12 @@ export default function PhotoUploadStub({ scanType = "receipt" }: { scanType?: S
         quantity: item.quantity ?? 1,
         expiration_date: item.expiration_date,
         location: item.location === "pantry" ? "pantry" : "fridge",
-      });
+        opened: false,
+      })
     }
-    setShowSkippedBanner(false);
-    setSkippedItems([]);
-  };
+    setShowSkippedBanner(false)
+    setSkippedItems([])
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -109,7 +116,8 @@ export default function PhotoUploadStub({ scanType = "receipt" }: { scanType?: S
           <>
             <Loader2 className="w-8 h-8 text-[#207245] animate-spin" />
             <span className="text-[#0B4D26] font-medium text-sm flex items-center gap-2">
-              Extracting items with AI <Sparkles className="w-3 h-3 text-[#FFC629]" />
+              Extracting items with AI{" "}
+              <Sparkles className="w-3 h-3 text-[#FFC629]" />
             </span>
           </>
         ) : (
@@ -139,29 +147,30 @@ export default function PhotoUploadStub({ scanType = "receipt" }: { scanType?: S
           <span className="text-base flex-shrink-0">ⓘ</span>
           <div className="flex-1">
             <p>
-              {skippedItems.length} item{skippedItems.length !== 1 ? "s" : ""} already in pantry{" "}
-              {skippedItems.length !== 1 ? "were" : "was"} skipped.
+              {skippedItems.length} item{skippedItems.length !== 1 ? "s" : ""}{" "}
+              already in pantry {skippedItems.length !== 1 ? "were" : "was"}{" "}
+              skipped.
             </p>
             <div className="flex gap-2 mt-2">
               <button
                 onClick={addSkippedItems}
-                className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors"
-              >
+                className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors">
                 Add all anyway
               </button>
               <button
                 onClick={() => setShowSkippedBanner(false)}
-                className="px-3 py-1 border border-blue-300 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors"
-              >
+                className="px-3 py-1 border border-blue-300 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
                 Dismiss
               </button>
             </div>
           </div>
-          <button onClick={() => setShowSkippedBanner(false)} className="flex-shrink-0">
+          <button
+            onClick={() => setShowSkippedBanner(false)}
+            className="flex-shrink-0">
             <X className="w-4 h-4 text-blue-400 hover:text-blue-600" />
           </button>
         </div>
       )}
     </div>
-  );
+  )
 }
