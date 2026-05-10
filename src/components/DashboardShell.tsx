@@ -29,9 +29,9 @@ type Section = "pantry" | "grocery" | "recipes" | "chat" | "profile"
 
 const NAV_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "pantry", label: "Pantry", icon: ShoppingBasket },
-  { id: "grocery", label: "Grocery", icon: ShoppingCart },
   { id: "recipes", label: "Recipes", icon: BookOpen },
   { id: "chat", label: "Chat", icon: MessageCircle },
+  { id: "grocery", label: "Grocery", icon: ShoppingCart },
 ]
 
 export default function DashboardShell({
