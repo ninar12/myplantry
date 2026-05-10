@@ -86,7 +86,7 @@ export default function BulkAddIngredients() {
       {mode && (
         <button
           onClick={() => { setMode(null); setDone([]); setFailed([]); }}
-          className="flex items-center gap-1 text-sm text-[#0B4D26]/50 hover:text-[#0B4D26] transition-colors w-fit"
+          className="flex items-center gap-1 text-sm text-[#003527]/50 hover:text-[#003527] transition-colors w-fit"
         >
           <ChevronLeft className="w-4 h-4" />
           Back
@@ -100,14 +100,14 @@ export default function BulkAddIngredients() {
             <button
               key={id}
               onClick={() => setMode(id)}
-              className="flex items-center gap-4 p-4 rounded-xl border border-[#0B4D26]/10 hover:border-[#207245]/40 hover:bg-[#207245]/5 transition-all text-left group"
+              className="flex items-center gap-4 p-4 rounded-xl border border-[#003527]/10 hover:border-[#2b6954]/40 hover:bg-[#2b6954]/5 transition-all text-left group"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#207245]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#207245]/20 transition-colors">
-                <Icon className="w-5 h-5 text-[#207245]" />
+              <div className="w-10 h-10 rounded-xl bg-[#2b6954]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#2b6954]/20 transition-colors">
+                <Icon className="w-5 h-5 text-[#2b6954]" />
               </div>
               <div>
-                <p className="font-semibold text-[#0B4D26] text-sm">{label}</p>
-                <p className="text-[#0B4D26]/50 text-xs mt-0.5">{description}</p>
+                <p className="font-semibold text-[#003527] text-sm">{label}</p>
+                <p className="text-[#003527]/50 text-xs mt-0.5">{description}</p>
               </div>
             </button>
           ))}
@@ -127,15 +127,15 @@ export default function BulkAddIngredients() {
             placeholder={"One ingredient per line:\nMilk\nEggs\nCheddar cheese\nSpinach"}
             rows={6}
             disabled={isLoading}
-            className="w-full px-4 py-3 rounded-xl border border-[#0B4D26]/20 bg-gray-50/50 outline-none focus:ring-2 focus:ring-[#207245] focus:border-transparent transition-all placeholder:text-gray-400 text-[#0B4D26] text-sm resize-none disabled:opacity-60"
+            className="w-full px-4 py-3 rounded-xl border border-[#003527]/20 bg-[#f5f3ef] outline-none focus:ring-2 focus:ring-[#2b6954] focus:border-transparent transition-all placeholder:text-gray-400 text-[#003527] text-sm resize-none disabled:opacity-60"
           />
-          <p className="text-xs text-[#0B4D26]/40 -mt-1">
+          <p className="text-xs text-[#003527]/40 -mt-1">
             AI will auto-detect category and expiry for each item.
           </p>
           <button
             type="submit"
             disabled={!text.trim() || isLoading}
-            className="w-full h-11 bg-[#0B4D26] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-[#207245] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-11 bg-[#003527] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-[#2b6954] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Adding items...</>

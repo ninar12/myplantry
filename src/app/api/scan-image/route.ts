@@ -1,6 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { parseAiJsonArray } from "@/lib/parseAiResponse";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { getOrCreateUser } from "@/lib/supabase";
+import { getUserPlan, limitReachedResponse } from "@/lib/subscription";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! });
 
@@ -43,6 +47,13 @@ Each object must have exactly these fields:
 If you cannot confidently identify any items, return an empty array: []`;
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const userId = await getOrCreateUser(session.user.email, session.user.name);
+  const plan = await getUserPlan(userId);
+  if (plan === "free") return limitReachedResponse(plan, null, "scan_image");
+
   const { image, mimeType, type } = await req.json();
   const imageType = (type as keyof typeof PROMPTS) ?? "receipt";
   const prompt = PROMPTS[imageType] + SHARED_OUTPUT_INSTRUCTIONS;

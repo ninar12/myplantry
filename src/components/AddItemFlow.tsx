@@ -32,18 +32,18 @@ export default function AddItemFlow() {
   const [method, setMethod] = useState<Method | null>(null);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-[#0B4D26]/10 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-[#003527]/10 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#0B4D26]/10">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#003527]/10">
         {method && (
           <button
             onClick={() => setMethod(null)}
-            className="p-1 rounded-lg hover:bg-gray-100 transition-colors text-[#0B4D26]/50 hover:text-[#0B4D26]"
+            className="p-1 rounded-lg hover:bg-[#f5f3ef] transition-colors text-[#003527]/50 hover:text-[#003527]"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
         )}
-        <h2 className="font-semibold text-[#0B4D26]">
+        <h2 className="font-semibold text-[#003527]">
           {method === "image" && "Scan Items"}
           {method === "receipt" && "Scan Receipt"}
           {method === "manual" && "Manual Entry"}
@@ -59,14 +59,14 @@ export default function AddItemFlow() {
               <button
                 key={id}
                 onClick={() => setMethod(id)}
-                className="flex items-center gap-4 p-4 rounded-xl border border-[#0B4D26]/10 hover:border-[#207245]/40 hover:bg-[#207245]/5 transition-all text-left group"
+                className="flex items-center gap-4 p-4 rounded-xl border border-[#003527]/10 hover:border-[#2b6954]/40 hover:bg-[#2b6954]/5 transition-all text-left group"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#207245]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#207245]/20 transition-colors">
-                  <Icon className="w-5 h-5 text-[#207245]" />
+                <div className="w-10 h-10 rounded-xl bg-[#2b6954]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#2b6954]/20 transition-colors">
+                  <Icon className="w-5 h-5 text-[#2b6954]" />
                 </div>
                 <div>
-                  <p className="font-semibold text-[#0B4D26] text-sm">{label}</p>
-                  <p className="text-[#0B4D26]/50 text-xs mt-0.5">{description}</p>
+                  <p className="font-semibold text-[#003527] text-sm">{label}</p>
+                  <p className="text-[#003527]/50 text-xs mt-0.5">{description}</p>
                 </div>
               </button>
             ))}

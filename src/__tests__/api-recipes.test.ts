@@ -4,6 +4,10 @@ import { NextRequest } from "next/server";
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn() }));
 vi.mock("@/app/api/auth/[...nextauth]/route", () => ({ authOptions: {} }));
+vi.mock("@/lib/subscription", () => ({
+  checkLimit: vi.fn().mockResolvedValue({ allowed: true, plan: "free", limit: 5, current: 0 }),
+  limitReachedResponse: vi.fn(),
+}));
 
 const {
   mockFrom, mockSelect, mockInsert, mockDelete,
@@ -47,8 +51,9 @@ const mockRow = {
   created_at: "2026-03-01T00:00:00.000Z",
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function req(url: string, options: RequestInit = {}) {
-  return new NextRequest(url, options);
+  return new NextRequest(url, options as any);
 }
 
 function resetChain() {

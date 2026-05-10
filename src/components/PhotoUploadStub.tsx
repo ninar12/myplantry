@@ -102,7 +102,7 @@ export default function PhotoUploadStub({
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="w-full relative overflow-hidden group border-2 border-dashed border-[#207245]/30 bg-[#207245]/5 hover:bg-[#207245]/10 hover:border-[#207245]/50 transition-all rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer">
+      <label className="w-full relative overflow-hidden group border-2 border-dashed border-[#2b6954]/30 bg-[#2b6954]/5 hover:bg-[#2b6954]/10 hover:border-[#2b6954]/50 transition-all rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer">
         <input
           ref={inputRef}
           type="file"
@@ -114,27 +114,27 @@ export default function PhotoUploadStub({
         />
         {isScanning ? (
           <>
-            <Loader2 className="w-8 h-8 text-[#207245] animate-spin" />
-            <span className="text-[#0B4D26] font-medium text-sm flex items-center gap-2">
+            <Loader2 className="w-8 h-8 text-[#2b6954] animate-spin" />
+            <span className="text-[#003527] font-medium text-sm flex items-center gap-2">
               Extracting items with AI{" "}
-              <Sparkles className="w-3 h-3 text-[#FFC629]" />
+              <Sparkles className="w-3 h-3 text-[#2b6954]" />
             </span>
           </>
         ) : (
           <>
             <div className="flex -space-x-2">
-              <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#0B4D26]/10 z-10 group-hover:-translate-y-1 transition-transform">
-                <Camera className="w-5 h-5 text-[#207245]" />
+              <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#003527]/10 z-10 group-hover:-translate-y-1 transition-transform">
+                <Camera className="w-5 h-5 text-[#2b6954]" />
               </div>
-              <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#0B4D26]/10 group-hover:-translate-y-1 transition-transform delay-75">
-                <Receipt className="w-5 h-5 text-[#207245]" />
+              <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#003527]/10 group-hover:-translate-y-1 transition-transform delay-75">
+                <Receipt className="w-5 h-5 text-[#2b6954]" />
               </div>
             </div>
             <div className="text-center">
-              <span className="block text-[#0B4D26] font-semibold text-sm mb-0.5">
+              <span className="block text-[#003527] font-semibold text-sm mb-0.5">
                 Wait, here&apos;s a receipt...
               </span>
-              <span className="block text-[#0B4D26]/60 text-xs">
+              <span className="block text-[#003527]/60 text-xs">
                 Scan to log multiple ingredients
               </span>
             </div>

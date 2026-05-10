@@ -14,13 +14,19 @@
   "dependencies": {
     "@google/genai": "^1.45.0",
     "@supabase/supabase-js": "^2.99.2",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
     "framer-motion": "^12.36.0",
+    "lightningcss": "^1.32.0",
+    "lightningcss-darwin-arm64": "^1.32.0",
     "lucide-react": "^0.577.0",
-    "next": "16.1.6",
+    "next": "^16.1.6",
     "next-auth": "^4.24.13",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

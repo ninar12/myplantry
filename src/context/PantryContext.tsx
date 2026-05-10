@@ -11,10 +11,14 @@ import { PantryItem, GroceryItem, Recipe, SavedRecipe } from "@/lib/types"
 
 interface PantryContextType {
   items: PantryItem[]
-  addItem: (item: Omit<PantryItem, "id">) => Promise<void>
+  addItem: (item: Omit<PantryItem, "id">) => Promise<PantryItem | undefined>
   removeItem: (id: string) => void
+  updateItem: (id: string, updates: Partial<Omit<PantryItem, "id">>) => Promise<void>
+  upgradeResource: string | null
+  clearUpgradePrompt: () => void
   recipes: Recipe[]
-  generateRecipe: () => Promise<Recipe>
+  generateRecipe: (prompt?: string) => Promise<Recipe>
+  addSavedRecipe: (recipe: SavedRecipe) => void
   isGenerating: boolean
   isLoading: boolean
   groceryItems: GroceryItem[]
@@ -37,6 +41,9 @@ export function PantryProvider({ children }: { children: ReactNode }) {
   const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [upgradeResource, setUpgradeResource] = useState<string | null>(null)
+
+  const clearUpgradePrompt = () => setUpgradeResource(null)
 
   useEffect(() => {
     Promise.all([
@@ -52,14 +59,16 @@ export function PantryProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const addItem = async (item: Omit<PantryItem, "id">) => {
+  const addItem = async (item: Omit<PantryItem, "id">): Promise<PantryItem | undefined> => {
     const res = await fetch("/api/pantry", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(item),
     })
-    const { item: newItem } = await res.json()
-    if (newItem) setItems((prev) => [...prev, newItem])
+    const data = await res.json()
+    if (data.error === "limit_reached") { setUpgradeResource(data.resource); return }
+    if (data.item) setItems((prev) => [...prev, data.item])
+    return data.item
   }
 
   const removeItem = (id: string) => {
@@ -67,18 +76,56 @@ export function PantryProvider({ children }: { children: ReactNode }) {
     fetch(`/api/pantry?id=${id}`, { method: "DELETE" })
   }
 
+  const updateItem = async (id: string, updates: Partial<Omit<PantryItem, "id">>) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...updates } : i)))
+    await fetch(`/api/pantry?id=${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    })
+  }
+
   const toggleOpened = (id: string) => {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, opened: !i.opened } : i)),
-    )
     const item = items.find((i) => i.id === id)
-    if (item) {
-      fetch(`/api/pantry?id=${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ opened: !item.opened }),
+    if (!item) return
+    const nowOpened = !item.opened
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, opened: nowOpened } : i)))
+
+    fetch("/api/shelf-life", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: item.name }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        let days: number | null = null
+        if (nowOpened) {
+          days = data.opened_fridge_days ?? null
+        } else {
+          days =
+            item.location === "pantry" ? (data.pantry_days ?? data.fridge_days ?? data.freezer_days ?? null)
+            : item.location === "freezer" ? (data.freezer_days ?? data.fridge_days ?? data.pantry_days ?? null)
+            : (data.fridge_days ?? data.pantry_days ?? data.freezer_days ?? null)
+        }
+
+        const updates: Partial<Omit<PantryItem, "id">> = { opened: nowOpened }
+        if (days != null) {
+          updates.expiration_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+          setItems((prev) => prev.map((i) => (i.id === id ? { ...i, expiration_date: updates.expiration_date! } : i)))
+        }
+        fetch(`/api/pantry?id=${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates),
+        })
       })
-    }
+      .catch(() => {
+        fetch(`/api/pantry?id=${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ opened: nowOpened }),
+        })
+      })
   }
 
   const checkPantryDuplicate = (name: string): PantryItem | null => {
@@ -91,15 +138,20 @@ export function PantryProvider({ children }: { children: ReactNode }) {
     )
   }
 
-  const generateRecipe = async (): Promise<Recipe> => {
+  const addSavedRecipe = (recipe: SavedRecipe) => {
+    setSavedRecipes((prev) => [recipe, ...prev])
+  }
+
+  const generateRecipe = async (prompt?: string): Promise<Recipe> => {
     setIsGenerating(true)
     try {
       const res = await fetch("/api/generate-recipe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, prompt }),
       })
       const data = await res.json()
+      if (data.error === "limit_reached") { setUpgradeResource(data.resource); throw new Error("limit_reached") }
       const newRecipe: Recipe = {
         id: crypto.randomUUID(),
         title: data.title,
@@ -141,8 +193,9 @@ export function PantryProvider({ children }: { children: ReactNode }) {
         match_percentage: recipe.match_percentage,
       }),
     })
-    const { recipe: saved } = await res.json()
-    if (saved) setSavedRecipes((prev) => [saved, ...prev])
+    const data = await res.json()
+    if (data.error === "limit_reached") { setUpgradeResource(data.resource); return }
+    if (data.recipe) setSavedRecipes((prev) => [data.recipe, ...prev])
   }
 
   const removeSavedRecipe = (id: string) => {
@@ -206,8 +259,12 @@ export function PantryProvider({ children }: { children: ReactNode }) {
         items,
         addItem,
         removeItem,
+        updateItem,
+        upgradeResource,
+        clearUpgradePrompt,
         recipes,
         generateRecipe,
+        addSavedRecipe,
         isGenerating,
         isLoading,
         groceryItems,

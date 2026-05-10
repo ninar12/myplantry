@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getOrCreateUser } from "@/lib/supabase";
+import { checkLimit, limitReachedResponse } from "@/lib/subscription";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -34,6 +35,10 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = await getOrCreateUser(session.user.email, session.user.name);
+
+  const { allowed, plan, limit } = await checkLimit(userId, "saved_recipes");
+  if (!allowed) return limitReachedResponse(plan, limit, "saved_recipes");
+
   const body = await req.json();
 
   const { data, error } = await supabase

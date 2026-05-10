@@ -64,22 +64,23 @@ describe("SavedRecipes", () => {
   it("expands a recipe to show ingredients and instructions on click", () => {
     render(<SavedRecipes />);
     fireEvent.click(screen.getByText("Garlic Pasta"));
-    expect(screen.getByText("pasta")).toBeDefined();
+    // "Boil pasta" only appears in the expanded instruction panel
     expect(screen.getByText("Boil pasta")).toBeDefined();
+    expect(screen.getAllByText("pasta").length).toBeGreaterThan(0);
   });
 
   it("collapses the recipe when clicked again", () => {
     render(<SavedRecipes />);
-    fireEvent.click(screen.getByText("Garlic Pasta"));
+    fireEvent.click(screen.getAllByText("Garlic Pasta")[0]);
     expect(screen.getByText("Boil pasta")).toBeDefined();
-    fireEvent.click(screen.getByText("Garlic Pasta"));
+    fireEvent.click(screen.getAllByText("Garlic Pasta")[0]);
     expect(screen.queryByText("Boil pasta")).toBeNull();
   });
 
   it("only one recipe is expanded at a time", () => {
     render(<SavedRecipes />);
-    fireEvent.click(screen.getByText("Garlic Pasta"));
-    fireEvent.click(screen.getByText("Veggie Stir Fry"));
+    fireEvent.click(screen.getAllByText("Garlic Pasta")[0]);
+    fireEvent.click(screen.getAllByText("Veggie Stir Fry")[0]);
     expect(screen.queryByText("Boil pasta")).toBeNull();
     expect(screen.getByText("Heat pan")).toBeDefined();
   });

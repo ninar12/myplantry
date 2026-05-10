@@ -9,7 +9,7 @@ type ExpiryMode = "auto" | "manual";
 type Location = "fridge" | "pantry" | "freezer";
 
 export default function AddIngredient() {
-  const { addItem, checkPantryDuplicate } = usePantry();
+  const { addItem, updateItem, checkPantryDuplicate } = usePantry();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [opened, setOpened] = useState(false);
@@ -31,10 +31,11 @@ export default function AddIngredient() {
         body: JSON.stringify({ name: itemName }),
       });
       const data = await res.json();
+      const bestFallback = data.fridge_days ?? data.pantry_days ?? data.freezer_days ?? 7;
       const days =
-        location === "pantry" ? (data.pantry_days ?? 7)
-        : location === "freezer" ? (data.freezer_days ?? 7)
-        : (data.fridge_days ?? 7);
+        location === "pantry" ? (data.pantry_days ?? data.fridge_days ?? data.freezer_days ?? 7)
+        : location === "freezer" ? (data.freezer_days ?? data.fridge_days ?? data.pantry_days ?? 7)
+        : (opened && data.opened_fridge_days != null ? data.opened_fridge_days : (data.fridge_days ?? bestFallback));
       return {
         expiration_date: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
         category: data.category ?? "Other",
@@ -49,28 +50,20 @@ export default function AddIngredient() {
 
   const doAdd = async (itemName: string, mode: ExpiryMode, date: string) => {
     setIsLoading(true);
-    let expiration_date: string;
-    let category: string;
 
-    if (mode === "manual" && date) {
-      expiration_date = new Date(date).toISOString();
-      const result = await resolveShelfLife(itemName);
-      category = result.category;
-    } else {
-      const result = await resolveShelfLife(itemName);
-      expiration_date = result.expiration_date;
-      category = result.category;
-    }
+    const placeholderExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const expiration_date = mode === "manual" && date ? new Date(date).toISOString() : placeholderExpiry;
 
-    await addItem({
+    const added = await addItem({
       name: itemName,
-      category,
+      category: "Other",
       quantity: 1,
       amount: amount.trim() || undefined,
       opened,
       expiration_date,
       location,
     });
+
     setName("");
     setAmount("");
     setOpened(false);
@@ -78,6 +71,16 @@ export default function AddIngredient() {
     setPendingItem(null);
     setIsLoading(false);
     setExpanded(false);
+
+    // Resolve real shelf life in background and update the item
+    if (added?.id) {
+      const id = added.id;
+      resolveShelfLife(itemName).then(({ expiration_date: realExpiry, category }) => {
+        const updates: Partial<Omit<PantryItem, "id">> = { category };
+        if (mode !== "manual" || !date) updates.expiration_date = realExpiry;
+        updateItem(id, updates);
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,9 +101,9 @@ export default function AddIngredient() {
     : 0;
 
   const pillBase = "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all";
-  const pillActive = "bg-[#207245] text-white shadow-sm";
-  const pillInactive = "text-[#0B4D26]/60 hover:text-[#0B4D26]";
-  const pillGroup = "flex items-center gap-0.5 rounded-full border border-[#0B4D26]/15 p-0.5";
+  const pillActive = "bg-[#2b6954] text-white shadow-sm";
+  const pillInactive = "text-[#003527]/60 hover:text-[#003527]";
+  const pillGroup = "flex items-center gap-0.5 rounded-full border border-[#003527]/15 p-0.5";
 
   return (
     <div className="flex flex-col gap-3 w-full">
@@ -113,12 +116,12 @@ export default function AddIngredient() {
             onChange={(e) => setName(e.target.value)}
             onFocus={() => setExpanded(true)}
             placeholder="e.g. Tomato, Milk, Chicken..."
-            className="w-full pl-4 pr-12 py-3 rounded-lg border border-[#0B4D26]/20 bg-gray-50/50 outline-none focus:ring-2 focus:ring-[#207245] focus:border-transparent transition-all placeholder:text-gray-400 text-[#0B4D26] font-medium text-sm"
+            className="w-full pl-4 pr-12 py-3 rounded-lg border border-[#003527]/20 bg-[#f5f3ef] outline-none focus:ring-2 focus:ring-[#2b6954] focus:border-transparent transition-all placeholder:text-gray-400 text-[#003527] font-medium text-sm"
           />
           <button
             type="submit"
             disabled={!name.trim() || isLoading || (expiryMode === "manual" && !manualDate)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-[#FFC629] text-[#0B4D26] rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#fbbb21] transition-colors shadow-sm"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm" style={{ background: "linear-gradient(135deg, #003527 0%, #064e3b 100%)", color: "#ffffff" }}
           >
             {isLoading ? (
               <Sparkles className="w-4 h-4 animate-pulse" />
@@ -135,17 +138,17 @@ export default function AddIngredient() {
               <input
                 type="text"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => { setAmount(e.target.value); if (e.target.value.trim()) setOpened(true); }}
                 placeholder="Amount (e.g. 1 cup, 500g)"
-                className="flex-1 px-3 py-2 rounded-lg border border-[#0B4D26]/20 bg-gray-50/50 outline-none focus:ring-2 focus:ring-[#207245] focus:border-transparent transition-all placeholder:text-gray-400 text-[#0B4D26] text-xs"
+                className="flex-1 px-3 py-2 rounded-lg border border-[#003527]/20 bg-[#f5f3ef] outline-none focus:ring-2 focus:ring-[#2b6954] focus:border-transparent transition-all placeholder:text-gray-400 text-[#003527] text-xs"
               />
               <button
                 type="button"
                 onClick={() => setOpened((o) => !o)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
                   opened
-                    ? "bg-[#207245]/10 border-[#207245]/30 text-[#207245]"
-                    : "border-[#0B4D26]/20 text-[#0B4D26]/50 hover:text-[#0B4D26]"
+                    ? "bg-[#2b6954]/10 border-[#2b6954]/30 text-[#2b6954]"
+                    : "border-[#003527]/20 text-[#003527]/50 hover:text-[#003527]"
                 }`}
               >
                 <PackageOpen className="w-3.5 h-3.5" />
@@ -183,7 +186,7 @@ export default function AddIngredient() {
                 value={manualDate}
                 onChange={(e) => setManualDate(e.target.value)}
                 min={new Date().toISOString().split("T")[0]}
-                className="w-full px-3 py-2 rounded-lg border border-[#0B4D26]/20 bg-gray-50/50 outline-none focus:ring-2 focus:ring-[#207245] focus:border-transparent transition-all text-[#0B4D26] text-xs"
+                className="w-full px-3 py-2 rounded-lg border border-[#003527]/20 bg-[#f5f3ef] outline-none focus:ring-2 focus:ring-[#2b6954] focus:border-transparent transition-all text-[#003527] text-xs"
               />
             )}
           </>
