@@ -169,7 +169,7 @@ export default async function Home() {
       <div className="max-w-7xl mx-auto px-6 md:px-8 py-10 md:py-14">
         <div
           className="rounded-2xl px-6 py-5 grid grid-cols-3 divide-x"
-          style={{ background: "#ffffff", border: "1px solid #e4e2de", divideColor: "#e4e2de" }}
+          style={{ background: "#ffffff", border: "1px solid #e4e2de" }}
         >
           {STATS.map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center gap-0.5 px-4">
