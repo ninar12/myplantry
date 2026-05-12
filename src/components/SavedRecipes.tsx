@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePantry } from "@/context/PantryContext";
-import { ChefHat, Trash2, Sparkles, Search, Import, Link, FileText, Loader2 } from "lucide-react";
+import { ChefHat, Trash2, Sparkles, X, Search, Import, Link, FileText, Loader2 } from "lucide-react";
 
 type ImportTab = "url" | "text";
 
