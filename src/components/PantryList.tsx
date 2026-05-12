@@ -5,7 +5,7 @@ import { usePantry } from "@/context/PantryContext";
 import { PantryItem } from "@/lib/types";
 import {
   Clock, Trash2, PackageOpen, Package, Pencil, FlaskConical,
-  Check, X, AlertTriangle, Sparkles, ChevronRight,
+  Check, X, AlertTriangle, Sparkles, ChevronRight, Search,
 } from "lucide-react";
 
 type UrgencyLevel = "critical" | "warning" | "fresh" | "expired";
@@ -59,6 +59,7 @@ export default function PantryList() {
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [usingId,   setUsingId]     = useState<string | null>(null);
   const [tappedId,  setTappedId]    = useState<string | null>(null);
+  const [search,    setSearch]      = useState("");
   const [customPct, setCustomPct]   = useState("");
   const [editForm,  setEditForm]    = useState<EditForm>({
     name: "", category: "", quantity: 1, amount: "", expiration_date: "", location: "fridge",
@@ -163,10 +164,13 @@ export default function PantryList() {
     );
   }
 
+  const q = search.trim().toLowerCase();
+  const filteredItems = q ? items.filter(i => i.name.toLowerCase().includes(q) || i.category.toLowerCase().includes(q)) : items;
+
   // Partition items
-  const alertItems   = items.filter(i => getUrgency(i.expiration_date).level === "critical");
-  const expiredItems = items.filter(i => getUrgency(i.expiration_date).level === "expired");
-  const activeItems  = items.filter(i => getUrgency(i.expiration_date).level !== "expired");
+  const alertItems   = filteredItems.filter(i => getUrgency(i.expiration_date).level === "critical");
+  const expiredItems = filteredItems.filter(i => getUrgency(i.expiration_date).level === "expired");
+  const activeItems  = filteredItems.filter(i => getUrgency(i.expiration_date).level !== "expired");
 
   // Group active items by category
   const byCategory = activeItems.reduce<Record<string, PantryItem[]>>((acc, item) => {
@@ -372,6 +376,20 @@ export default function PantryList() {
   const sidebarItems = [...alertItems, ...warningItems].slice(0, 5);
 
   return (
+    <div className="flex flex-col gap-4">
+    <div className="relative">
+      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#9ca39f" }} />
+      <input
+        type="text"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Search ingredients…"
+        className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+        style={{ background: "#ffffff", border: "1px solid #e4e2de", color: "#1b1c1a" }}
+        onFocus={e => (e.target.style.borderColor = "#2b6954")}
+        onBlur={e => (e.target.style.borderColor = "#e4e2de")}
+      />
+    </div>
     <div className="flex flex-col lg:flex-row gap-6 items-start">
 
       {/* ── LEFT SIDEBAR ── */}
@@ -499,6 +517,7 @@ export default function PantryList() {
         )}
 
       </div>
+    </div>
     </div>
   );
 }
