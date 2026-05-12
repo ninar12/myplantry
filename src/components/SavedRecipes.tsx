@@ -260,15 +260,7 @@ export default function SavedRecipes() {
           ))}
         </div>
 
-        {/* Import button */}
-        <button
-          onClick={() => setShowImport(true)}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-80 sm:ml-auto flex-shrink-0"
-          style={{ background: "#003527", color: "#ffffff" }}
-        >
-          <Import className="w-3.5 h-3.5" />
-          Import recipe
-        </button>
+        {/* Import button — hidden for now */}
       </div>
 
       {/* ── Grid ── */}
