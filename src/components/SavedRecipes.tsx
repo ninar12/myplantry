@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { usePantry } from "@/context/PantryContext";
-import { ChefHat, Trash2, CheckCircle2, Sparkles, X, Search, Import, Link, FileText, Loader2 } from "lucide-react";
+import { ChefHat, Trash2, Sparkles, Search, Import, Link, FileText, Loader2 } from "lucide-react";
 
 type ImportTab = "url" | "text";
 
@@ -168,17 +169,10 @@ function SkeletonCard() {
 
 export default function SavedRecipes() {
   const { savedRecipes, removeSavedRecipe } = usePantry();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("all");
   const [showImport, setShowImport] = useState(false);
-  const detailRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (selectedId && detailRef.current) {
-      detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [selectedId]);
 
   const filtered = useMemo(() => {
     let list = [...savedRecipes];
@@ -191,8 +185,6 @@ export default function SavedRecipes() {
     if (activeFilter === "recent") list = list.slice(0, 6);
     return list;
   }, [savedRecipes, search, activeFilter]);
-
-  const selectedRecipe = savedRecipes.find((r) => r.id === selectedId) ?? null;
 
   if (savedRecipes.length === 0) {
     return (
@@ -273,18 +265,16 @@ export default function SavedRecipes() {
           {filtered.map((recipe) => {
             const previewIngredients = recipe.ingredients.slice(0, 3);
             const overflow = recipe.ingredients.length - 3;
-            const isSelected = recipe.id === selectedId;
 
             return (
               <div
                 key={recipe.id}
-                className="group relative rounded-2xl overflow-hidden transition-all cursor-pointer"
+                className="group relative rounded-2xl overflow-hidden transition-all cursor-pointer hover:shadow-md"
                 style={{
                   background: "#ffffff",
-                  border: `1px solid ${isSelected ? "#2b6954" : "#e4e2de"}`,
-                  boxShadow: isSelected ? "0 4px 16px rgba(0,53,39,0.12)" : "none",
+                  border: "1px solid #e4e2de",
                 }}
-                onClick={() => setSelectedId(isSelected ? null : recipe.id)}
+                onClick={() => router.push(`/dashboard/recipes/${recipe.id}`)}
               >
                 {/* Thumbnail */}
                 <div
@@ -358,86 +348,6 @@ export default function SavedRecipes() {
         </div>
       )}
 
-      {/* ── Recipe detail panel ── */}
-      {selectedRecipe && (
-        <div
-          ref={detailRef}
-          className="rounded-2xl p-6"
-          style={{ background: "#ffffff", border: "1px solid #e4e2de", boxShadow: "0 4px 20px rgba(0,53,39,0.06)" }}
-        >
-          <div className="flex items-start justify-between gap-3 mb-5">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span
-                  className="text-[10px] font-bold tracking-widest uppercase flex items-center gap-1 px-2 py-0.5 rounded-full"
-                  style={{ background: "#cce6d9", color: "#003527" }}
-                >
-                  <Sparkles className="w-2.5 h-2.5" /> Saved recipe
-                </span>
-                {selectedRecipe.match_percentage && (
-                  <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: "#003527", color: "#ffffff" }}
-                  >
-                    {selectedRecipe.match_percentage}% match
-                  </span>
-                )}
-              </div>
-              <h3
-                className="font-bold text-xl leading-tight"
-                style={{ fontFamily: "var(--font-plus-jakarta), sans-serif", color: "#003527", letterSpacing: "-0.01em" }}
-              >
-                {selectedRecipe.title}
-              </h3>
-              <p className="text-xs mt-1" style={{ color: "#707974" }}>
-                {new Date(selectedRecipe.created_at).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}
-                {" · "}{selectedRecipe.ingredients.length} ingredients
-              </p>
-            </div>
-            <button
-              onClick={() => setSelectedId(null)}
-              className="p-2 rounded-xl transition-colors flex-shrink-0"
-              style={{ background: "#f5f3ef", color: "#707974" }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#003527")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#707974")}
-              aria-label="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#707974" }}>Ingredients</p>
-          <div className="flex flex-wrap gap-2 mb-6">
-            {selectedRecipe.ingredients.map((ing, idx) => (
-              <span
-                key={idx}
-                className="rounded-full px-3 py-1.5 text-sm flex items-center gap-1.5"
-                style={{ background: "#f5f3ef", color: "#1b1c1a" }}
-              >
-                <CheckCircle2 className="w-3 h-3 flex-shrink-0" style={{ color: "#2b6954" }} />
-                {ing}
-              </span>
-            ))}
-          </div>
-
-          <div className="pt-5" style={{ borderTop: "1px solid #f5f3ef" }}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ color: "#707974" }}>Instructions</p>
-            <ol className="space-y-3.5">
-              {selectedRecipe.instructions.map((step, idx) => (
-                <li key={idx} className="flex gap-3">
-                  <span
-                    className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs"
-                    style={{ background: "#cce6d9", color: "#003527" }}
-                  >
-                    {idx + 1}
-                  </span>
-                  <p className="text-sm leading-relaxed pt-0.5" style={{ color: "#404944" }}>{step}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      )}
     </div>
     </>
   );

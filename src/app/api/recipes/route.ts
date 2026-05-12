@@ -4,11 +4,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getOrCreateUser } from "@/lib/supabase";
 import { checkLimit, limitReachedResponse } from "@/lib/subscription";
 
-export async function GET() {
+export async function GET(req?: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = await getOrCreateUser(session.user.email, session.user.name);
+  const id = req ? new URL(req.url).searchParams.get("id") : null;
+
+  if (id) {
+    const { data, error } = await supabase
+      .from("saved_recipes")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .single();
+    if (error) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({
+      recipe: {
+        id: data.id, title: data.title, ingredients: data.ingredients,
+        instructions: data.instructions, match_percentage: data.match_percentage ?? undefined,
+        created_at: data.created_at,
+      },
+    });
+  }
 
   const { data, error } = await supabase
     .from("saved_recipes")

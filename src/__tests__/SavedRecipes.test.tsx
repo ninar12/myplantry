@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { SavedRecipe } from "@/lib/types";
 
-const { mockRemoveSavedRecipe, mockRecipes } = vi.hoisted(() => {
+const { mockRemoveSavedRecipe, mockRecipes, mockPush } = vi.hoisted(() => {
   const mockRemoveSavedRecipe = vi.fn();
+  const mockPush = vi.fn();
   const mockRecipes: SavedRecipe[] = [
     {
       id: "r1",
@@ -22,7 +23,7 @@ const { mockRemoveSavedRecipe, mockRecipes } = vi.hoisted(() => {
       created_at: "2026-03-10T00:00:00.000Z",
     },
   ];
-  return { mockRemoveSavedRecipe, mockRecipes };
+  return { mockRemoveSavedRecipe, mockRecipes, mockPush };
 });
 
 vi.mock("@/context/PantryContext", () => ({
@@ -30,6 +31,10 @@ vi.mock("@/context/PantryContext", () => ({
     savedRecipes: mockRecipes,
     removeSavedRecipe: mockRemoveSavedRecipe,
   }),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush, back: vi.fn() }),
 }));
 
 import SavedRecipes from "@/components/SavedRecipes";
@@ -61,28 +66,22 @@ describe("SavedRecipes", () => {
     expect(screen.queryByText("Sauté garlic")).toBeNull();
   });
 
-  it("expands a recipe to show ingredients and instructions on click", () => {
+  it("navigates to the recipe detail page on click", () => {
     render(<SavedRecipes />);
     fireEvent.click(screen.getByText("Garlic Pasta"));
-    // "Boil pasta" only appears in the expanded instruction panel
-    expect(screen.getByText("Boil pasta")).toBeDefined();
-    expect(screen.getAllByText("pasta").length).toBeGreaterThan(0);
+    expect(mockPush).toHaveBeenCalledWith("/dashboard/recipes/r1");
   });
 
-  it("collapses the recipe when clicked again", () => {
+  it("navigates to the correct recipe when the second card is clicked", () => {
     render(<SavedRecipes />);
-    fireEvent.click(screen.getAllByText("Garlic Pasta")[0]);
-    expect(screen.getByText("Boil pasta")).toBeDefined();
-    fireEvent.click(screen.getAllByText("Garlic Pasta")[0]);
-    expect(screen.queryByText("Boil pasta")).toBeNull();
+    fireEvent.click(screen.getByText("Veggie Stir Fry"));
+    expect(mockPush).toHaveBeenCalledWith("/dashboard/recipes/r2");
   });
 
-  it("only one recipe is expanded at a time", () => {
+  it("does not show recipe details inline on the list page", () => {
     render(<SavedRecipes />);
-    fireEvent.click(screen.getAllByText("Garlic Pasta")[0]);
-    fireEvent.click(screen.getAllByText("Veggie Stir Fry")[0]);
     expect(screen.queryByText("Boil pasta")).toBeNull();
-    expect(screen.getByText("Heat pan")).toBeDefined();
+    expect(screen.queryByText("Heat pan")).toBeNull();
   });
 
   it("calls removeSavedRecipe with the correct id when delete is clicked", () => {
