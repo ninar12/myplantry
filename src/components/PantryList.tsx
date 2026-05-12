@@ -54,7 +54,7 @@ function ItemInitial({ name, category }: { name: string; category: string }) {
   );
 }
 
-export default function PantryList() {
+export default function PantryList({ onGoToRecipes }: { onGoToRecipes?: () => void } = {}) {
   const { items, removeItem, toggleOpened, updateItem } = usePantry();
   const [editingId,        setEditingId]        = useState<string | null>(null);
   const [usingId,          setUsingId]          = useState<string | null>(null);
@@ -270,6 +270,13 @@ export default function PantryList() {
 
     const isTapped = tappedId === item.id;
 
+    const leftBorderColor = {
+      critical: "#f87171",
+      warning:  "#fbbf24",
+      fresh:    "#34d399",
+      expired:  "#d1d5db",
+    }[level];
+
     return (
       <div
         key={item.id}
@@ -277,6 +284,7 @@ export default function PantryList() {
         style={{
           background: level === "critical" ? "#fff8f8" : "#ffffff",
           border: `1px solid ${isTapped ? "#bfc9c3" : level === "critical" ? "#fecaca" : "#e4e2de"}`,
+          borderLeft: `3px solid ${leftBorderColor}`,
           opacity: level === "expired" ? 0.6 : 1,
         }}
         onClick={() => setTappedId(isTapped ? null : item.id)}
@@ -304,16 +312,25 @@ export default function PantryList() {
                 ×{item.quantity % 1 === 0 ? item.quantity : item.quantity.toFixed(2).replace(/\.?0+$/, "")}
               </span>
             )}
-            <button
-              onClick={(e) => { e.stopPropagation(); toggleOpened(item.id); }}
-              className="text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
-              style={item.opened
-                ? { background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a" }
-                : { background: "#f5f3ef", color: "#707974" }}
-            >
-              {item.opened ? <PackageOpen className="w-3 h-3" /> : <Package className="w-3 h-3" />}
-              {item.opened ? "Opened" : "Sealed"}
-            </button>
+            {item.opened ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleOpened(item.id); }}
+                className="text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
+                style={{ background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a" }}
+              >
+                <PackageOpen className="w-3 h-3" />
+                Opened
+              </button>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleOpened(item.id); }}
+                aria-label="Sealed"
+                className="text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                style={{ background: "#f5f3ef", color: "#707974" }}
+              >
+                <Package className="w-3 h-3" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -509,9 +526,18 @@ export default function PantryList() {
                   : `You have ${alertItems.length} ingredients expiring within 2 days. Generate a recipe to use them up.`
                 : `You have ${items.length} ingredient${items.length !== 1 ? "s" : ""} in your larder. Generate a recipe to see what's possible.`}
             </p>
-            <div className="text-xs font-semibold text-white/60">
+            <div className="text-xs font-semibold text-white/60 mb-3">
               {Object.keys(byCategory).length} categories · {items.length} items
             </div>
+            {onGoToRecipes && (
+              <button
+                onClick={onGoToRecipes}
+                className="w-full mt-1 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
+                style={{ background: "#FFC629", color: "#003527" }}
+              >
+                Generate a recipe →
+              </button>
+            )}
           </div>
         </div>
 

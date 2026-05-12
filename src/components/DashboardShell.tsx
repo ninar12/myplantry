@@ -222,7 +222,7 @@ export default function DashboardShell({
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm self-start ${
                   showAdd
                     ? "bg-[#003527]/8 text-[#003527] hover:bg-[#003527]/12"
-                    : "bg-[#003527] text-white hover:bg-[#2b6954]"
+                    : "bg-[#FFC629] text-[#003527] hover:bg-[#f0b800]"
                 }`}>
                 {showAdd ? (
                   <X className="w-4 h-4" />
@@ -277,7 +277,7 @@ export default function DashboardShell({
                   </div>
                 </div>
               )}
-              <PantryList />
+              <PantryList onGoToRecipes={() => setActive("recipes")} />
             </div>
           )}
 
