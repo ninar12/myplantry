@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { usePantry } from "@/context/PantryContext";
 import { ChefHat, Trash2, CheckCircle2, Sparkles, X, Search, Import, Link, FileText, Loader2 } from "lucide-react";
 
@@ -172,6 +172,13 @@ export default function SavedRecipes() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("all");
   const [showImport, setShowImport] = useState(false);
+  const detailRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedId && detailRef.current) {
+      detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedId]);
 
   const filtered = useMemo(() => {
     let list = [...savedRecipes];
@@ -362,6 +369,7 @@ export default function SavedRecipes() {
       {/* ── Recipe detail panel ── */}
       {selectedRecipe && (
         <div
+          ref={detailRef}
           className="rounded-2xl p-6"
           style={{ background: "#ffffff", border: "1px solid #e4e2de", boxShadow: "0 4px 20px rgba(0,53,39,0.06)" }}
         >
