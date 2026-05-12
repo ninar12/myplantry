@@ -58,6 +58,7 @@ export default function PantryList() {
   const { items, removeItem, toggleOpened, updateItem } = usePantry();
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [usingId,   setUsingId]     = useState<string | null>(null);
+  const [tappedId,  setTappedId]    = useState<string | null>(null);
   const [customPct, setCustomPct]   = useState("");
   const [editForm,  setEditForm]    = useState<EditForm>({
     name: "", category: "", quantity: 1, amount: "", expiration_date: "", location: "fridge",
@@ -255,15 +256,18 @@ export default function PantryList() {
       expired:  { background: "#f5f3ef", color: "#707974" },
     }[level];
 
+    const isTapped = tappedId === item.id;
+
     return (
       <div
         key={item.id}
         className="group relative flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all"
         style={{
           background: level === "critical" ? "#fff8f8" : "#ffffff",
-          border: `1px solid ${level === "critical" ? "#fecaca" : "#e4e2de"}`,
+          border: `1px solid ${isTapped ? "#bfc9c3" : level === "critical" ? "#fecaca" : "#e4e2de"}`,
           opacity: level === "expired" ? 0.6 : 1,
         }}
+        onClick={() => setTappedId(isTapped ? null : item.id)}
       >
         <ItemInitial name={item.name} category={item.category} />
 
@@ -289,7 +293,7 @@ export default function PantryList() {
               </span>
             )}
             <button
-              onClick={() => toggleOpened(item.id)}
+              onClick={(e) => { e.stopPropagation(); toggleOpened(item.id); }}
               className="text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
               style={item.opened
                 ? { background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a" }
@@ -302,10 +306,10 @@ export default function PantryList() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex-shrink-0">
+        <div className={`flex items-center gap-1 transition-opacity flex-shrink-0 ${isTapped ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"}`}>
           <div className="relative">
             <button
-              onClick={() => { setUsingId(usingId === item.id ? null : item.id); setCustomPct(""); }}
+              onClick={(e) => { e.stopPropagation(); setUsingId(usingId === item.id ? null : item.id); setCustomPct(""); }}
               className="p-1.5 rounded-xl transition-colors"
               style={{ color: "#707974" }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#f5f3ef"; (e.currentTarget as HTMLElement).style.color = "#2b6954"; }}
@@ -347,13 +351,13 @@ export default function PantryList() {
               </div>
             )}
           </div>
-          <button onClick={() => startEdit(item)} className="p-1.5 rounded-xl transition-colors" style={{ color: "#707974" }}
+          <button onClick={(e) => { e.stopPropagation(); startEdit(item); }} className="p-1.5 rounded-xl transition-colors" style={{ color: "#707974" }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#f5f3ef"; (e.currentTarget as HTMLElement).style.color = "#003527"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#707974"; }}
           >
             <Pencil className="w-4 h-4" />
           </button>
-          <button onClick={() => removeItem(item.id)} className="p-1.5 rounded-xl transition-colors" style={{ color: "#707974" }}
+          <button onClick={(e) => { e.stopPropagation(); removeItem(item.id); }} className="p-1.5 rounded-xl transition-colors" style={{ color: "#707974" }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#fef2f2"; (e.currentTarget as HTMLElement).style.color = "#dc2626"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#707974"; }}
           >
