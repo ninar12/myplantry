@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePantry } from "@/context/PantryContext";
 import { PantryItem } from "@/lib/types";
 import {
   Clock, Trash2, PackageOpen, Package, Pencil, FlaskConical,
-  Check, X, AlertTriangle, Sparkles, ChevronRight, Search,
+  Check, X, AlertTriangle, Sparkles, Search, Flame,
 } from "lucide-react";
 
 type UrgencyLevel = "critical" | "warning" | "fresh" | "expired";
@@ -56,11 +56,19 @@ function ItemInitial({ name, category }: { name: string; category: string }) {
 
 export default function PantryList() {
   const { items, removeItem, toggleOpened, updateItem } = usePantry();
-  const [editingId, setEditingId]   = useState<string | null>(null);
-  const [usingId,   setUsingId]     = useState<string | null>(null);
-  const [tappedId,  setTappedId]    = useState<string | null>(null);
-  const [search,    setSearch]      = useState("");
-  const [customPct, setCustomPct]   = useState("");
+  const [editingId,        setEditingId]        = useState<string | null>(null);
+  const [usingId,          setUsingId]          = useState<string | null>(null);
+  const [tappedId,         setTappedId]         = useState<string | null>(null);
+  const [search,           setSearch]           = useState("");
+  const [customPct,        setCustomPct]        = useState("");
+  const [expiryWarningDays, setExpiryWarningDays] = useState<number>(3);
+
+  useEffect(() => {
+    fetch("/api/profile")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.preferences?.expiry_warning_days) setExpiryWarningDays(data.preferences.expiry_warning_days); })
+      .catch(() => {});
+  }, []);
   const [editForm,  setEditForm]    = useState<EditForm>({
     name: "", category: "", quantity: 1, amount: "", expiration_date: "", location: "fridge",
   });
@@ -372,8 +380,13 @@ export default function PantryList() {
     );
   };
 
-  const warningItems = items.filter(i => getUrgency(i.expiration_date).level === "warning");
-  const sidebarItems = [...alertItems, ...warningItems].slice(0, 5);
+  const sidebarItems = items
+    .filter(i => {
+      const { days } = getUrgency(i.expiration_date);
+      return days >= 0 && days <= expiryWarningDays;
+    })
+    .sort((a, b) => getUrgency(a.expiration_date).days - getUrgency(b.expiration_date).days)
+    .slice(0, 6);
 
   return (
     <div className="flex flex-col gap-4">
@@ -397,52 +410,81 @@ export default function PantryList() {
 
         {/* Expiring Soon */}
         {sidebarItems.length > 0 && (
-          <div className="rounded-2xl overflow-hidden" style={{ background: "#ffffff", border: "1px solid #e4e2de" }}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #f5f3ef" }}>
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" style={{ color: "#dc2626" }} />
-                <span className="text-sm font-semibold" style={{ color: "#003527" }}>Expiring Soon</span>
+          <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #fcd9a0" }}>
+            {/* Header */}
+            <div
+              className="px-5 py-4 flex items-center justify-between"
+              style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%)", borderBottom: "1px solid #fcd9a0" }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#fed7aa" }}>
+                  <Flame className="w-4 h-4" style={{ color: "#ea580c" }} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold leading-tight" style={{ color: "#1b1c1a", fontFamily: "var(--font-plus-jakarta), sans-serif" }}>
+                    Use these up
+                  </p>
+                  <p className="text-[10px]" style={{ color: "#b45309" }}>
+                    within {expiryWarningDays} day{expiryWarningDays !== 1 ? "s" : ""}
+                  </p>
+                </div>
               </div>
               <span
-                className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: "#fee2e2", color: "#b91c1c" }}
+                className="text-lg font-extrabold"
+                style={{ color: "#ea580c", fontFamily: "var(--font-plus-jakarta), sans-serif" }}
               >
                 {sidebarItems.length}
               </span>
             </div>
-            <div className="flex flex-col">
-              {sidebarItems.map((item, idx) => {
-                const { label, level } = getUrgency(item.expiration_date);
-                const { bg, text } = getCategoryColor(item.category);
+
+            {/* Items */}
+            <div className="p-3 flex flex-col gap-1.5" style={{ background: "#fffdf9" }}>
+              {sidebarItems.map((item) => {
+                const { days } = getUrgency(item.expiration_date);
+                const isToday = days === 0;
+                const isCritical = days <= 1;
+                const accent = isCritical ? "#ef4444" : days <= 3 ? "#f97316" : "#f59e0b";
+                const rowBg  = isCritical ? "#fef2f2" : days <= 3 ? "#fff7ed" : "#fffbeb";
+                const barPct = Math.max(6, Math.round(((expiryWarningDays - days) / expiryWarningDays) * 100));
+
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 px-4 py-3.5 transition-colors"
-                    style={{
-                      borderBottom: idx < sidebarItems.length - 1 ? "1px solid #f5f3ef" : "none",
-                    }}
+                    className="rounded-xl px-3 pt-2.5 pb-2 flex flex-col gap-1.5"
+                    style={{ background: rowBg }}
                   >
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-xs"
-                      style={{ background: bg, color: text, fontFamily: "var(--font-plus-jakarta), sans-serif" }}
-                    >
-                      {item.name[0]?.toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
                       <p
                         className="text-sm font-semibold capitalize truncate"
                         style={{ color: "#1b1c1a", fontFamily: "var(--font-plus-jakarta), sans-serif" }}
                       >
                         {item.name}
                       </p>
-                      <p className="text-[11px]" style={{ color: level === "critical" ? "#b91c1c" : "#b45309" }}>
-                        {label}
-                      </p>
+                      <span
+                        className="text-xs font-bold flex-shrink-0 px-2 py-0.5 rounded-full"
+                        style={{ background: accent + "22", color: accent }}
+                      >
+                        {isToday ? "today" : `${days}d`}
+                      </span>
                     </div>
-                    <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: "#bfc9c3" }} />
+                    {/* Countdown bar — fills left-to-right as deadline approaches */}
+                    <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.07)" }}>
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${barPct}%`, background: accent, transition: "width 0.6s ease" }}
+                      />
+                    </div>
                   </div>
                 );
               })}
+            </div>
+
+            {/* Footer hint */}
+            <div className="px-4 py-2.5 flex items-center gap-1.5" style={{ background: "#fff7ed", borderTop: "1px solid #fcd9a0" }}>
+              <AlertTriangle className="w-3 h-3 flex-shrink-0" style={{ color: "#f59e0b" }} />
+              <p className="text-[10px]" style={{ color: "#b45309" }}>
+                Threshold set in your profile
+              </p>
             </div>
           </div>
         )}
