@@ -28,28 +28,180 @@ type EditForm = {
 // Icon circle color per category
 function getCategoryColor(category: string): { bg: string; text: string } {
   const map: Record<string, { bg: string; text: string }> = {
-    "Meat":          { bg: "#fee2e2", text: "#b91c1c" },
-    "Meat & Seafood":{ bg: "#fee2e2", text: "#b91c1c" },
-    "Seafood":       { bg: "#dbeafe", text: "#1d4ed8" },
-    "Dairy":         { bg: "#ede9fe", text: "#6d28d9" },
-    "Produce":       { bg: "#dcfce7", text: "#15803d" },
-    "Grains":        { bg: "#fef9c3", text: "#a16207" },
-    "Canned Goods":  { bg: "#ffedd5", text: "#c2410c" },
-    "Pantry":        { bg: "#cce6d9", text: "#003527" },
-    "Freezer":       { bg: "#e0f2fe", text: "#0369a1" },
-    "Other":         { bg: "#f5f3ef", text: "#404944" },
+    "Meat":              { bg: "#fee2e2", text: "#b91c1c" },
+    "Meat & Seafood":    { bg: "#fee2e2", text: "#b91c1c" },
+    "Seafood":           { bg: "#dbeafe", text: "#1d4ed8" },
+    "Dairy":             { bg: "#ede9fe", text: "#6d28d9" },
+    "Produce":           { bg: "#dcfce7", text: "#15803d" },
+    "Grains":            { bg: "#fef9c3", text: "#a16207" },
+    "Grains & Bread":    { bg: "#fef9c3", text: "#a16207" },
+    "Canned Goods":      { bg: "#ffedd5", text: "#c2410c" },
+    "Canned & Jarred":   { bg: "#ffedd5", text: "#c2410c" },
+    "Condiments":        { bg: "#fef3c7", text: "#b45309" },
+    "Beverages":         { bg: "#e0f2fe", text: "#0369a1" },
+    "Pantry":            { bg: "#cce6d9", text: "#003527" },
+    "Pantry Staples":    { bg: "#cce6d9", text: "#003527" },
+    "Freezer":           { bg: "#e0f2fe", text: "#0369a1" },
+    "Bakery":            { bg: "#fef9c3", text: "#a16207" },
+    "Snacks":            { bg: "#fce7f3", text: "#9d174d" },
+    "Other":             { bg: "#f5f3ef", text: "#404944" },
   };
   return map[category] || { bg: "#f5f3ef", text: "#404944" };
 }
 
+// Cute category emoji fallback
+function getCategoryEmoji(category: string): string {
+  const map: Record<string, string> = {
+    "Meat":            "🥩",
+    "Meat & Seafood":  "🥩",
+    "Seafood":         "🐟",
+    "Dairy":           "🧀",
+    "Produce":         "🥦",
+    "Grains":          "🌾",
+    "Grains & Bread":  "🍞",
+    "Canned Goods":    "🥫",
+    "Canned & Jarred": "🫙",
+    "Condiments":      "🧴",
+    "Beverages":       "🧃",
+    "Pantry":          "🫘",
+    "Pantry Staples":  "🫘",
+    "Freezer":         "🧊",
+    "Bakery":          "🥐",
+    "Snacks":          "🍿",
+    "Other":           "🛒",
+  };
+  return map[category] ?? "🛒";
+}
+
+// Item-level emoji — checks name keywords, falls back to category emoji
+const ITEM_EMOJI_MAP: [string[], string][] = [
+  // Fruit
+  [["strawberry", "strawberries"],          "🍓"],
+  [["blueberry", "blueberries"],            "🫐"],
+  [["raspberry", "raspberries"],            "🍓"],
+  [["blackberry", "blackberries"],          "🍇"],
+  [["cherry", "cherries"],                  "🍒"],
+  [["apple", "apples"],                     "🍎"],
+  [["banana", "bananas"],                   "🍌"],
+  [["lemon", "lemons"],                     "🍋"],
+  [["lime", "limes"],                       "🍋"],
+  [["orange", "oranges"],                   "🍊"],
+  [["grape", "grapes"],                     "🍇"],
+  [["watermelon"],                          "🍉"],
+  [["peach", "peaches"],                    "🍑"],
+  [["pear", "pears"],                       "🍐"],
+  [["pineapple"],                           "🍍"],
+  [["mango", "mangoes"],                    "🥭"],
+  [["coconut"],                             "🥥"],
+  [["kiwi"],                                "🥝"],
+  [["melon", "cantaloupe", "honeydew"],     "🍈"],
+  [["plum", "plums"],                       "🍑"],
+  // Vegetables
+  [["tomato", "tomatoes"],                  "🍅"],
+  [["potato", "potatoes"],                  "🥔"],
+  [["sweet potato", "yam"],                 "🍠"],
+  [["carrot", "carrots"],                   "🥕"],
+  [["broccoli"],                            "🥦"],
+  [["spinach", "kale", "chard"],            "🥬"],
+  [["lettuce", "arugula", "salad greens"],  "🥬"],
+  [["cucumber", "cucumbers"],               "🥒"],
+  [["bell pepper", "pepper", "peppers"],    "🫑"],
+  [["jalapeño", "jalapeno", "chili"],       "🌶️"],
+  [["garlic"],                              "🧄"],
+  [["onion", "onions", "shallot"],          "🧅"],
+  [["avocado", "avocados"],                 "🥑"],
+  [["corn", "maize"],                       "🌽"],
+  [["mushroom", "mushrooms"],               "🍄"],
+  [["eggplant", "aubergine"],               "🍆"],
+  [["celery"],                              "🥬"],
+  [["zucchini", "courgette"],               "🥒"],
+  [["cauliflower"],                         "🥦"],
+  [["asparagus"],                           "🫛"],
+  [["peas", "edamame", "beans"],            "🫛"],
+  // Protein
+  [["chicken"],                             "🍗"],
+  [["turkey"],                              "🦃"],
+  [["beef", "steak", "ground beef"],        "🥩"],
+  [["pork", "ham"],                         "🥩"],
+  [["bacon"],                               "🥓"],
+  [["sausage", "hot dog", "bratwurst"],     "🌭"],
+  [["salmon", "tuna", "tilapia", "cod"],    "🐟"],
+  [["shrimp", "prawns"],                    "🍤"],
+  [["crab", "lobster"],                     "🦞"],
+  [["egg", "eggs"],                         "🥚"],
+  [["tofu"],                                "🫘"],
+  // Dairy
+  [["milk"],                                "🥛"],
+  [["butter"],                              "🧈"],
+  [["cheese"],                              "🧀"],
+  [["yogurt", "yoghurt"],                   "🫙"],
+  [["cream", "whipped cream"],              "🥛"],
+  [["ice cream"],                           "🍦"],
+  // Grains & Bread
+  [["bread", "sourdough", "baguette"],      "🍞"],
+  [["rice"],                                "🍚"],
+  [["pasta", "spaghetti", "penne", "noodle"],"🍝"],
+  [["flour"],                               "🌾"],
+  [["oat", "oatmeal", "granola"],           "🥣"],
+  [["cereal"],                              "🥣"],
+  [["bagel"],                               "🥯"],
+  [["croissant"],                           "🥐"],
+  [["tortilla", "wrap"],                    "🫓"],
+  [["pretzel"],                             "🥨"],
+  [["waffle", "pancake"],                   "🧇"],
+  [["cracker", "crackers"],                 "🫙"],
+  // Condiments & Sauces
+  [["jam", "jelly", "preserve", "marmalade"],"🍯"],
+  [["honey"],                               "🍯"],
+  [["ketchup", "catsup"],                   "🍅"],
+  [["hot sauce", "sriracha", "tabasco"],    "🌶️"],
+  [["mustard"],                             "🫙"],
+  [["mayonnaise", "mayo"],                  "🫙"],
+  [["soy sauce", "tamari"],                 "🫙"],
+  [["olive", "olives", "olive oil", "oil"],  "🫒"],
+  [["vinegar"],                             "🫙"],
+  [["salsa"],                               "🍅"],
+  [["peanut butter", "almond butter"],      "🥜"],
+  [["maple syrup", "syrup"],                "🍯"],
+  // Pantry staples
+  [["sugar", "brown sugar"],                "🍬"],
+  [["salt"],                                "🧂"],
+  [["coffee", "espresso"],                  "☕"],
+  [["tea"],                                 "🍵"],
+  [["chocolate", "cocoa"],                  "🍫"],
+  [["almond", "almonds", "cashew", "walnut", "nuts", "peanut"],"🥜"],
+  [["chips", "crisps"],                     "🍟"],
+  [["popcorn"],                             "🍿"],
+  [["cookie", "cookies"],                   "🍪"],
+  [["cake", "muffin", "cupcake"],           "🎂"],
+  [["pizza"],                               "🍕"],
+  // Beverages
+  [["juice", "lemonade"],                   "🧃"],
+  [["water", "sparkling water"],            "💧"],
+  [["wine"],                                "🍷"],
+  [["beer", "ale", "lager"],                "🍺"],
+  [["soda", "cola", "pop"],                 "🥤"],
+  [["smoothie"],                            "🥤"],
+];
+
+function getItemEmoji(name: string, category: string): string {
+  const lower = name.toLowerCase();
+  for (const [keywords, emoji] of ITEM_EMOJI_MAP) {
+    if (keywords.some((k) => lower.includes(k))) return emoji;
+  }
+  return getCategoryEmoji(category);
+}
+
 function ItemInitial({ name, category }: { name: string; category: string }) {
-  const { bg, text } = getCategoryColor(category);
+  const { bg } = getCategoryColor(category);
+  const emoji = getItemEmoji(name, category);
   return (
     <div
-      className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
-      style={{ background: bg, color: text, fontFamily: "var(--font-plus-jakarta), sans-serif" }}
+      className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 text-lg select-none"
+      style={{ background: bg }}
+      title={name}
     >
-      {name[0]?.toUpperCase() ?? "?"}
+      {emoji}
     </div>
   );
 }
@@ -74,9 +226,31 @@ export default function PantryList() {
   });
   const [isRecalculating, setIsRecalculating] = useState(false);
 
-  const applyUse = (item: PantryItem, percent: number) => {
+  const applyUse = async (item: PantryItem, percent: number) => {
     setUsingId(null);
-    if (percent >= 100) { removeItem(item.id); return; }
+    if (percent >= 100) {
+      if (item.quantity > 1) {
+        // Move to next unit: decrement quantity, reset opened, recalculate expiry
+        let expiration_date = item.expiration_date;
+        try {
+          const res = await fetch("/api/shelf-life", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: item.name }),
+          });
+          const data = await res.json();
+          const days =
+            item.location === "pantry" ? (data.pantry_days ?? data.fridge_days ?? data.freezer_days ?? 7)
+            : item.location === "freezer" ? (data.freezer_days ?? data.fridge_days ?? data.pantry_days ?? 7)
+            : (data.fridge_days ?? data.pantry_days ?? data.freezer_days ?? 7);
+          expiration_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+        } catch { /* keep existing date */ }
+        await updateItem(item.id, { quantity: item.quantity - 1, opened: false, expiration_date });
+        return;
+      }
+      removeItem(item.id);
+      return;
+    }
     const remaining = parseFloat((item.quantity * (1 - percent / 100)).toFixed(2));
     if (remaining <= 0) removeItem(item.id);
     else updateItem(item.id, { quantity: remaining });
@@ -341,7 +515,7 @@ export default function PantryList() {
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = pct === 100 ? "#fef2f2" : "#f5f3ef"}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
                     >
-                      {pct}%{pct === 100 ? " — all of it" : ""}
+                      {pct}%{pct === 100 ? (item.quantity > 1 ? " — open next" : " — all of it") : ""}
                     </button>
                   ))}
                   <div className="flex items-center gap-1 mt-1 pt-1" style={{ borderTop: "1px solid #f5f3ef" }}>
