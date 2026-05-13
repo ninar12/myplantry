@@ -209,6 +209,13 @@ export function PantryProvider({ children }: { children: ReactNode }) {
 
     // Get shelf life from AI then add to pantry
     let expiration_date: string
+    const cat = groceryItem.category?.toLowerCase() ?? ""
+    const storageLocation: "fridge" | "pantry" | "freezer" = cat.includes("frozen")
+      ? "freezer"
+      : cat.includes("pantry") || cat.includes("canned") ||
+        cat.includes("condiment") || cat.includes("jarred") || cat.includes("staple")
+        ? "pantry"
+        : "fridge"
     try {
       const res = await fetch("/api/shelf-life", {
         method: "POST",
@@ -216,16 +223,10 @@ export function PantryProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ name: groceryItem.name }),
       })
       const data = await res.json()
-      const location = groceryItem.category?.toLowerCase().includes("frozen")
-        ? "freezer"
-        : groceryItem.category?.toLowerCase().includes("pantry") ||
-            groceryItem.category?.toLowerCase().includes("canned")
-          ? "pantry"
-          : "fridge"
       const days =
-        location === "pantry"
+        storageLocation === "pantry"
           ? (data.pantry_days ?? 7)
-          : location === "freezer"
+          : storageLocation === "freezer"
             ? (data.freezer_days ?? 7)
             : (data.fridge_days ?? 7)
       expiration_date = new Date(
@@ -244,7 +245,7 @@ export function PantryProvider({ children }: { children: ReactNode }) {
         category: groceryItem.category,
         quantity: groceryItem.quantity,
         expiration_date,
-        location: "fridge",
+        location: storageLocation,
         opened: false,
       }),
       fetch(`/api/grocery?id=${id}`, { method: "DELETE" }),
