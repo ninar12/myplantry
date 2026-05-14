@@ -243,9 +243,10 @@ export default function PantryList() {
             item.location === "pantry" ? (data.pantry_days ?? data.fridge_days ?? data.freezer_days ?? 7)
             : item.location === "freezer" ? (data.freezer_days ?? data.fridge_days ?? data.pantry_days ?? 7)
             : (data.fridge_days ?? data.pantry_days ?? data.freezer_days ?? 7);
-          expiration_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+          expiration_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
         } catch { /* keep existing date */ }
-        await updateItem(item.id, { quantity: item.quantity - 1, opened: false, expiration_date });
+        const safeExpiry = expiration_date.split("T")[0];
+        await updateItem(item.id, { quantity: item.quantity - 1, opened: false, expiration_date: safeExpiry });
         return;
       }
       removeItem(item.id);
