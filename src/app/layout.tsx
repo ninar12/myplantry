@@ -34,6 +34,10 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "Plantry",
   description: "Cook what you already have.",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -43,6 +47,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="theme-color" content="#003527" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${plusJakartaSans.variable} ${manrope.variable} antialiased`}
       >
