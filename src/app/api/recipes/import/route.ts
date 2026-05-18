@@ -6,6 +6,8 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { supabase, getOrCreateUser } from "@/lib/supabase"
 import { checkLimit, limitReachedResponse } from "@/lib/subscription"
 
+export const maxDuration = 30
+
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! })
 
 function stripHtml(html: string): string {
@@ -15,7 +17,7 @@ function stripHtml(html: string): string {
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 12000)
+    .slice(0, 6000)
 }
 
 export async function POST(req: NextRequest) {
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
     try {
       const res = await fetch(body.url.trim(), {
         headers: { "User-Agent": "Mozilla/5.0 (compatible; Plantry/1.0)" },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(5000),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       html = await res.text()
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
     content = stripHtml(html)
   } else if (body.text?.trim()) {
-    content = body.text.trim().slice(0, 12000)
+    content = body.text.trim().slice(0, 6000)
   } else {
     return NextResponse.json(
       { error: "Provide either a url or text" },
@@ -69,7 +71,7 @@ Content:
 ${content}`
 
   const response = await ai.models.generateContent({
-    model: "gemini-3.1-pro-preview",
+    model: "gemini-2.0-flash",
     contents: [{ parts: [{ text: geminiPrompt }] }],
   })
 
