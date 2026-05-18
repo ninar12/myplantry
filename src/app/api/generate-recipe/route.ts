@@ -20,6 +20,24 @@ export async function POST(req: NextRequest) {
 
   const { items, prompt: userPrompt }: { items: PantryItem[]; prompt?: string } = await req.json();
 
+  const [prefsResult, savedResult] = await Promise.all([
+    supabase.from("user_preferences").select("dietary_prefs, cuisine_prefs").eq("user_id", userId).maybeSingle(),
+    supabase.from("saved_recipes").select("title").eq("user_id", userId).order("created_at", { ascending: false }).limit(10),
+  ]);
+  const prefs = prefsResult.data;
+  const savedRecipes = savedResult.data ?? [];
+
+  const dietaryContext = prefs?.dietary_prefs?.length
+    ? `Dietary restrictions — strictly follow these, no exceptions: ${prefs.dietary_prefs.join(", ")}.`
+    : "";
+  const cuisineContext = prefs?.cuisine_prefs?.length
+    ? `Preferred cuisines: ${prefs.cuisine_prefs.join(", ")}.`
+    : "";
+  const tasteContext = savedRecipes.length
+    ? `The user has previously saved these recipes: ${savedRecipes.map((r) => r.title).join(", ")}. Suggest something different but complementary.`
+    : "";
+  const personalization = [dietaryContext, cuisineContext, tasteContext].filter(Boolean).join("\n");
+
   const pantryContext = items
     .map((i) => `- ${i.name} (${i.category}, expires: ${new Date(i.expiration_date).toLocaleDateString()})`)
     .join("\n");
@@ -28,11 +46,19 @@ export async function POST(req: NextRequest) {
     ? `The user wants: "${userPrompt.trim()}" — use this as guidance but still prefer ingredients expiring soonest.\n\n`
     : "";
 
-  const prompt = `You are a professional chef. Create one delicious recipe using ingredients from this pantry:
+  const prompt = `You are a practical home cooking assistant. Your job is to suggest ONE real, well-known recipe that can be made using the user's pantry ingredients.
 
+STRICT RULES:
+- Only suggest recipes that actually exist and that a real home cook would recognize
+- Never invent unusual or unappetizing flavor combinations (e.g. vinegar pasta, sweet meat stews with random acids)
+- If the pantry ingredients don't naturally combine into a real dish, suggest the closest sensible recipe and note what common ingredient is missing
+- Prefer simple, classic dishes over creative experiments
+- Prioritize ingredients expiring soonest
+${personalization ? `\n${personalization}` : ""}
+User's pantry:
 ${pantryContext}
 
-${userGuidance}Prefer ingredients that expire soonest. Return ONLY a raw JSON object — no markdown fences, no extra text:
+${userGuidance}Return ONLY a raw JSON object — no markdown fences, no extra text:
 {
   "title": "Recipe name",
   "ingredients": ["1 cup flour", "2 eggs"],
