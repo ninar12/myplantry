@@ -1,22 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <!-- Rounded square background -->
   <rect width="32" height="32" rx="7" fill="#003527"/>
 
-  <!-- Jar lid band -->
-  <rect x="10" y="9" width="12" height="3" rx="1" fill="white"/>
+  <!-- Jar body -->
+  <rect x="11" y="20" width="10" height="9" rx="1.5" fill="white"/>
 
-  <!-- Jar body (slightly tapered: wider at bottom) -->
-  <path d="M11 12 L10 24 Q10 25 11 25 L21 25 Q22 25 22 24 L21 12 Z" fill="none" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- Glass interior cutout -->
+  <rect x="12.5" y="21" width="7" height="7" rx="0.75" fill="#003527"/>
 
-  <!-- Jar body fill (subtle interior) -->
-  <path d="M12.2 13 L11.2 24 L20.8 24 L19.8 13 Z" fill="#003527"/>
+  <!-- Jar band (wider than body, creates shoulder) -->
+  <rect x="9" y="17" width="14" height="3.5" rx="0.75" fill="white"/>
 
-  <!-- Sprout stem -->
-  <line x1="16" y1="22" x2="16" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Jar lid cap (narrower than band) -->
+  <rect x="11.5" y="14.5" width="9" height="2.5" rx="1" fill="white"/>
 
-  <!-- Left leaf -->
-  <path d="M16 18 Q13 16 13 13.5 Q15 14.5 16 17" fill="white"/>
+  <!-- Stem — runs from inside jar up through lid -->
+  <line x1="16" y1="28" x2="16" y2="13" stroke="white" stroke-width="2" stroke-linecap="round"/>
 
-  <!-- Right leaf -->
-  <path d="M16 16.5 Q19 14.5 19.5 12 Q17 13.5 16 16.5" fill="white"/>
+  <!-- Left leaf (points upper-left, alternate phyllotaxy) -->
+  <path d="M16 17.5 C13.5 15.5 9 12 9 8 C12.5 8 16 14 16 17.5Z" fill="white"/>
+
+  <!-- Right leaf (points upper-right, slightly higher) -->
+  <path d="M16 13.5 C18.5 11.5 22.5 8 22.5 5 C19 5 16 10.5 16 13.5Z" fill="white"/>
 </svg>
