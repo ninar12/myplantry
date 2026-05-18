@@ -44,7 +44,7 @@ export default function GroceryList() {
     const duplicate = checkPantryDuplicate(name.trim());
     if (duplicate) {
       const daysLeft = Math.ceil(
-        (new Date(duplicate.expiration_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        (new Date(duplicate.expiration_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24) // eslint-disable-line react-hooks/purity
       );
       if (daysLeft > 3) {
         setPendingItem({ name: name.trim(), category });

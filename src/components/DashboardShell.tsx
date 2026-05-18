@@ -12,7 +12,6 @@ import {
   LogOut,
   Plus,
   X,
-  UserCircle,
 } from "lucide-react"
 import PantryList from "@/components/PantryList"
 import GroceryList from "@/components/GroceryList"
@@ -51,15 +50,16 @@ export default function DashboardShell({
     recipes: savedRecipes.length,
   }
 
+  const now = Date.now() // eslint-disable-line react-hooks/purity
   const expiringItems = items.filter((item) => {
     const days = Math.ceil(
-      (new Date(item.expiration_date).getTime() - Date.now()) /
+      (new Date(item.expiration_date).getTime() - now) /
         (1000 * 60 * 60 * 24),
     )
     return days >= 0 && days <= 3
   })
   const expiredItems = items.filter(
-    (item) => new Date(item.expiration_date).getTime() < Date.now(),
+    (item) => new Date(item.expiration_date).getTime() < now,
   )
 
   const displayName = userName ?? session?.user?.name ?? null

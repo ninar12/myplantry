@@ -51,8 +51,8 @@ const mockRow = {
   created_at: "2026-03-01T00:00:00.000Z",
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function req(url: string, options: RequestInit = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new NextRequest(url, options as any);
 }
 

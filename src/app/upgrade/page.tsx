@@ -96,7 +96,7 @@ export default function UpgradePage() {
           Your kitchen, fully unlocked.
         </h1>
         <p className="text-lg max-w-xl mx-auto" style={{ color: "#404944" }}>
-          Start free and upgrade when you're ready. No hidden fees, cancel anytime.
+          Start free and upgrade when you&apos;re ready. No hidden fees, cancel anytime.
         </p>
       </div>
 
