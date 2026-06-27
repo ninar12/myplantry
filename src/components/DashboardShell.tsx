@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
+import Image from "next/image"
 import {
-  Leaf,
   ShoppingBasket,
   ShoppingCart,
   BookOpen,
@@ -77,9 +77,7 @@ export default function DashboardShell({
           <Link
             href="/dashboard"
             className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <div className="bg-[#003527] text-[#fbf9f5] p-1.5 rounded-xl shadow-sm">
-              <Leaf className="w-4 h-4" />
-            </div>
+            <Image src="/myplantry_logo1.png" alt="MyPlantry" width={32} height={32} className="rounded-xl" />
             <span className="font-bold text-lg tracking-tight text-[#003527]">
               MyPlantry
             </span>
@@ -154,9 +152,7 @@ export default function DashboardShell({
           <Link
             href="/dashboard"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="bg-[#003527] text-[#fbf9f5] p-1.5 rounded-xl shadow-sm">
-              <Leaf className="w-4 h-4" />
-            </div>
+            <Image src="/myplantry_logo1.png" alt="MyPlantry" width={28} height={28} className="rounded-xl" />
             <span className="font-bold text-lg tracking-tight text-[#003527]">
               MyPlantry
             </span>

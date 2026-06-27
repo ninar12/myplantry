@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePantry } from "@/context/PantryContext";
 import { PantryItem } from "@/lib/types";
+import Image from "next/image";
 import {
   Clock, Trash2, PackageOpen, Package, Pencil, FlaskConical,
   Check, X, AlertTriangle, Sparkles, Search, Flame,
@@ -330,12 +331,7 @@ export default function PantryList() {
         className="rounded-2xl flex flex-col items-center justify-center py-20 px-6 text-center"
         style={{ background: "#ffffff", border: "1px solid #e4e2de" }}
       >
-        <div
-          className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4"
-          style={{ background: "linear-gradient(135deg, #f5f3ef 0%, #efeeea 100%)" }}
-        >
-          <span className="text-3xl">🥬</span>
-        </div>
+        <Image src="/myplantry_logo1.png" alt="" width={120} height={120} className="mb-5 drop-shadow-md" aria-hidden="true" />
         <h3
           className="font-bold text-base mb-1"
           style={{ fontFamily: "var(--font-plus-jakarta), sans-serif", color: "#003527" }}

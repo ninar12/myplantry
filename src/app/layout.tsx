@@ -1,21 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Outfit, Plus_Jakarta_Sans, Manrope } from "next/font/google";
+import { Outfit, Plus_Jakarta_Sans, Manrope } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import { Analytics } from "@vercel/analytics/next";
 
 const outfit = Outfit({
   variable: "--font-outfit",
-  subsets: ["latin"],
-});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
@@ -33,10 +23,10 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: "Plantry",
-  description: "Cook what you already have.",
+  description: "A plan for your pantry.",
   icons: {
-    icon: "/favicon.svg",
-    apple: "/favicon.svg",
+    icon: "/myplantry_logo1.png",
+    apple: "/myplantry_logo1.png",
   },
 };
 
@@ -51,7 +41,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#003527" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${plusJakartaSans.variable} ${manrope.variable} antialiased`}
+        className={`${outfit.variable} ${plusJakartaSans.variable} ${manrope.variable} antialiased`}
       >
         <Providers>
           {children}

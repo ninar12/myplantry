@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePantry } from "@/context/PantryContext";
+import Image from "next/image";
 import { ChefHat, Trash2, Sparkles, X, Search, Import, Link, FileText, Loader2 } from "lucide-react";
 
 type ImportTab = "url" | "text";
@@ -196,10 +197,10 @@ export default function SavedRecipes() {
         </div>
         <div className="absolute inset-0 flex items-center justify-center">
           <div
-            className="text-center px-6 py-5 rounded-2xl"
+            className="text-center px-8 py-6 rounded-2xl flex flex-col items-center"
             style={{ background: "rgba(251,249,245,0.92)", backdropFilter: "blur(8px)", border: "1px solid #e4e2de" }}
           >
-            <ChefHat className="w-8 h-8 mx-auto mb-2" style={{ color: "#bfc9c3" }} />
+            <Image src="/myplantry_logo1.png" alt="" width={130} height={130} className="mb-4 drop-shadow-md" aria-hidden="true" />
             <p className="font-semibold text-sm" style={{ color: "#1b1c1a" }}>Generate your first recipe to see it here.</p>
             <p className="text-xs mt-1" style={{ color: "#707974" }}>Your saved recipes will appear as cards below.</p>
           </div>

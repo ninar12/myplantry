@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { usePantry } from "@/context/PantryContext";
+import Image from "next/image";
 import {
-  Plus, Tag, Trash2, Loader2, ShoppingCart, CheckCircle2,
+  Plus, Tag, Trash2, Loader2, CheckCircle2,
   AlertCircle, Apple, Beef, Milk, Package, Wheat, Archive, Layers,
 } from "lucide-react";
 
@@ -181,9 +182,7 @@ export default function GroceryList() {
             className="rounded-2xl flex flex-col items-center justify-center py-16 px-6 text-center"
             style={{ background: "#ffffff", border: "1px solid #e4e2de" }}
           >
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: "#f5f3ef" }}>
-              <ShoppingCart className="w-6 h-6" style={{ color: "#bfc9c3" }} />
-            </div>
+            <Image src="/myplantry_logo1.png" alt="" width={110} height={110} className="mb-4 drop-shadow-md" aria-hidden="true" />
             <p className="font-semibold text-sm mb-1" style={{ color: "#1b1c1a" }}>Your list is empty</p>
             <p className="text-xs" style={{ color: "#707974" }}>Add items you need to pick up.</p>
           </div>
