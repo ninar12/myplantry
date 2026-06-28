@@ -585,7 +585,7 @@ export default async function Home() {
         />
         {/* Floating pantry items */}
         <img
-          src=EMOJI("graza")
+          src={EMOJI("graza")}
           alt=""
           aria-hidden="true"
           className="absolute left-8 bottom-8 w-16 h-16 object-contain opacity-80 pointer-events-none hidden md:block"
@@ -595,7 +595,7 @@ export default async function Home() {
           }}
         />
         <img
-          src=EMOJI("peanut-butter")
+          src={EMOJI("peanut-butter")}
           alt=""
           aria-hidden="true"
           className="absolute right-8 top-8 w-20 h-20 object-contain opacity-80 pointer-events-none hidden md:block"
@@ -605,7 +605,7 @@ export default async function Home() {
           }}
         />
         <img
-          src=EMOJI("oranges-bag")
+          src={EMOJI("oranges-bag")}
           alt=""
           aria-hidden="true"
           className="absolute right-16 bottom-6 w-20 h-20 object-contain opacity-70 pointer-events-none hidden md:block"
@@ -615,7 +615,7 @@ export default async function Home() {
           }}
         />
         <img
-          src=EMOJI("pasta")
+          src={EMOJI("pasta")}
           alt=""
           aria-hidden="true"
           className="absolute left-16 top-8 w-16 h-16 object-contain opacity-75 pointer-events-none hidden md:block"
