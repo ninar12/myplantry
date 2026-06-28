@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn() }));
-vi.mock("@/app/api/auth/[...nextauth]/route", () => ({ authOptions: {} }));
+vi.mock("@/lib/auth", () => ({ authOptions: {} }));
 
 const { mockFrom, mockUpdate, mockEq, chain } = vi.hoisted(() => {
   const mockEq = vi.fn();

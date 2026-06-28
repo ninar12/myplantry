@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn() }));
-vi.mock("@/app/api/auth/[...nextauth]/route", () => ({ authOptions: {} }));
+vi.mock("@/lib/auth", () => ({ authOptions: {} }));
 vi.mock("@/lib/subscription", () => ({
   checkLimit: vi.fn().mockResolvedValue({ allowed: true, plan: "free", limit: 5, current: 0 }),
   limitReachedResponse: vi.fn(),
@@ -76,14 +76,14 @@ beforeEach(() => {
 describe("GET /api/recipes", () => {
   it("returns 401 when not authenticated", async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(null);
-    expect((await GET()).status).toBe(401);
+    expect((await GET(new NextRequest("http://localhost/api/recipes"))).status).toBe(401);
   });
 
   it("returns the user's saved recipes", async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(authed);
     mockOrder.mockResolvedValueOnce({ data: [mockRow], error: null });
 
-    const body = await (await GET()).json();
+    const body = await (await GET(new NextRequest("http://localhost/api/recipes"))).json();
     expect(body.recipes).toHaveLength(1);
     expect(body.recipes[0].title).toBe("Garlic Pasta");
     expect(body.recipes[0].match_percentage).toBe(85);
@@ -93,20 +93,20 @@ describe("GET /api/recipes", () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(authed);
     mockOrder.mockResolvedValueOnce({ data: [], error: null });
 
-    expect((await (await GET()).json()).recipes).toHaveLength(0);
+    expect((await (await GET(new NextRequest("http://localhost/api/recipes"))).json()).recipes).toHaveLength(0);
   });
 
   it("returns 500 on a database error", async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(authed);
     mockOrder.mockResolvedValueOnce({ data: null, error: { message: "DB error" } });
-    expect((await GET()).status).toBe(500);
+    expect((await GET(new NextRequest("http://localhost/api/recipes"))).status).toBe(500);
   });
 
   it("queries saved_recipes ordered by created_at desc", async () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(authed);
     mockOrder.mockResolvedValueOnce({ data: [], error: null });
 
-    await GET();
+    await GET(new NextRequest("http://localhost/api/recipes"));
     expect(mockFrom).toHaveBeenCalledWith("saved_recipes");
     expect(mockOrder).toHaveBeenCalledWith("created_at", { ascending: false });
   });
@@ -115,7 +115,7 @@ describe("GET /api/recipes", () => {
     vi.mocked(getServerSession).mockResolvedValueOnce(authed);
     mockOrder.mockResolvedValueOnce({ data: [], error: null });
 
-    await GET();
+    await GET(new NextRequest("http://localhost/api/recipes"));
     expect(mockEq).toHaveBeenCalledWith("user_id", "user-123");
   });
 });
