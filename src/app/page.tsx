@@ -6,22 +6,25 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { authOptions } from "./api/auth/[...nextauth]/route"
 
+const EMOJI = (name: string) =>
+  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/emojis/${name}.png`
+
 const EXPERIENCE = [
   {
     num: "01",
-    icon: "/emojis/lettuce.png",
+    icon: EMOJI("lettuce"),
     title: "Your Whole Pantry",
     body: "Everything you have, in one place. Know exactly what's in your fridge, freezer, and pantry — without digging around or forgetting what you bought.",
   },
   {
     num: "02",
-    icon: "/emojis/chili-pepper.png",
+    icon: EMOJI("chili-pepper"),
     title: "Recipes from Real Life",
     body: `Tell Plantry what's in your kitchen and it'll generate real, delicious recipes from exactly what you have. No more "what's for dinner?" panic.`,
   },
   {
     num: "03",
-    icon: "/emojis/lemon.png",
+    icon: EMOJI("lemon"),
     title: "Nothing Goes to Waste",
     body: "Get reminders before things expire, plan meals around what needs using, and actually cook everything you buy. Your grocery budget will thank you.",
   },
@@ -286,7 +289,7 @@ export default async function Home() {
           ].map((name, i) => (
             <img
               key={i}
-              src={`/emojis/${name}.png`}
+              src={EMOJI(name)}
               alt={name}
               width={52}
               height={52}
@@ -324,42 +327,42 @@ export default async function Home() {
           {[
             {
               step: "01",
-              emoji: "/emojis/blueberries.png",
+              emoji: EMOJI("blueberries"),
               title: "Add your ingredients",
               desc: "Scan a receipt, type it in, or snap a photo. Done in seconds.",
               bg: "#e8f5ee",
             },
             {
               step: "02",
-              emoji: "/emojis/leek.png",
+              emoji: EMOJI("leek"),
               title: "Your pantry, organized",
               desc: "Everything in one place with expiry dates tracked automatically.",
               bg: "#AFDDA6",
             },
             {
               step: "03",
-              emoji: "/emojis/corn.png",
+              emoji: EMOJI("corn"),
               title: "Generate recipes",
               desc: "Real recipes from exactly what you have. No missing ingredients.",
               bg: "#cce6d9",
             },
             {
               step: "04",
-              emoji: "/emojis/garlic.png",
+              emoji: EMOJI("garlic"),
               title: "Ask the Kitchen AI",
               desc: "Substitutions, timing + techniques",
               bg: "rgb(140, 180, 156)",
             },
             {
               step: "05",
-              emoji: "/emojis/carrot.png",
+              emoji: EMOJI("carrot"),
               title: "Build your grocery list",
               desc: "Add what you need. Buy it, and it lands straight in your pantry.",
               bg: "#EFFFF0",
             },
             {
               step: "06",
-              emoji: "/emojis/peach.png",
+              emoji: EMOJI("peach"),
               title: "Never let things expire",
               desc: "Get notified before something goes bad! MyPlantry will prioritize expiring items.",
               bg: "#fff4e6",
@@ -582,7 +585,7 @@ export default async function Home() {
         />
         {/* Floating pantry items */}
         <img
-          src="/emojis/graza.png"
+          src=EMOJI("graza")
           alt=""
           aria-hidden="true"
           className="absolute left-8 bottom-8 w-16 h-16 object-contain opacity-80 pointer-events-none hidden md:block"
@@ -592,7 +595,7 @@ export default async function Home() {
           }}
         />
         <img
-          src="/emojis/peanut-butter.png"
+          src=EMOJI("peanut-butter")
           alt=""
           aria-hidden="true"
           className="absolute right-8 top-8 w-20 h-20 object-contain opacity-80 pointer-events-none hidden md:block"
@@ -602,7 +605,7 @@ export default async function Home() {
           }}
         />
         <img
-          src="/emojis/oranges-bag.png"
+          src=EMOJI("oranges-bag")
           alt=""
           aria-hidden="true"
           className="absolute right-16 bottom-6 w-20 h-20 object-contain opacity-70 pointer-events-none hidden md:block"
@@ -612,7 +615,7 @@ export default async function Home() {
           }}
         />
         <img
-          src="/emojis/pasta.png"
+          src=EMOJI("pasta")
           alt=""
           aria-hidden="true"
           className="absolute left-16 top-8 w-16 h-16 object-contain opacity-75 pointer-events-none hidden md:block"
@@ -639,7 +642,7 @@ export default async function Home() {
           <p
             className="text-sm font-semibold uppercase tracking-widest"
             style={{ color: "rgba(255,220,180,0.8)" }}>
-            The Plantry Way
+            MyPlantry Way
           </p>
         </div>
       </section>
@@ -756,7 +759,7 @@ export default async function Home() {
               color: "rgba(149,211,186,0.9)",
             }}>
             <Sparkles className="w-3.5 h-3.5" />
-            Now in beta — join the early access
+            Now in beta — sign in and try it out!
           </div>
           <h2
             className="text-4xl md:text-5xl font-bold tracking-tight text-white"
