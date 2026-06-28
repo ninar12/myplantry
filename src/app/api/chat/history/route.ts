@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth"
 import { supabase, getOrCreateUser } from "@/lib/supabase"
 
 // GET /api/chat/history — fetch last 50 messages for the current user

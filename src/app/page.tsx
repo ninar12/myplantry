@@ -4,7 +4,7 @@ import { Leaf, Sparkles, CheckCircle2 } from "lucide-react"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { authOptions } from "./api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth"
 
 const EMOJI = (name: string) =>
   `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/emojis/${name}.png`
@@ -743,7 +743,7 @@ export default async function Home() {
           }}
         />
         <Image
-          src="/myplantry_logo1.png"
+          src="/logo.png"
           alt=""
           width={420}
           height={420}

@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePantry } from "@/context/PantryContext";
 import Image from "next/image";
-import { ChefHat, Trash2, Sparkles, X, Search, Import, Link, FileText, Loader2 } from "lucide-react";
+import { ChefHat, Trash2, Sparkles, X, Search, Link, FileText, Loader2 } from "lucide-react";
 
 type ImportTab = "url" | "text";
 
@@ -133,7 +133,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
             {loading ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Importing…</>
             ) : (
-              <><Import className="w-4 h-4" /> Import Recipe</>
+              <><Link className="w-4 h-4" /> Import Recipe</>
             )}
           </button>
         </div>
@@ -173,7 +173,7 @@ export default function SavedRecipes() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("all");
-  const [showImport, setShowImport] = useState(false);
+  // const [showImport, setShowImport] = useState(false); // NRH-78: import hidden for now
 
   const filtered = useMemo(() => {
     let list = [...savedRecipes];
@@ -211,7 +211,6 @@ export default function SavedRecipes() {
 
   return (
     <>
-    {showImport && <ImportModal onClose={() => setShowImport(false)} />}
     <div className="flex flex-col gap-5">
 
       {/* ── Controls ── */}
@@ -253,14 +252,7 @@ export default function SavedRecipes() {
           ))}
         </div>
 
-        <button
-          onClick={() => setShowImport(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
-          style={{ background: "#003527", color: "#ffffff" }}
-        >
-          <Import className="w-3.5 h-3.5" />
-          Import
-        </button>
+        {/* NRH-78: Import button hidden for now */}
       </div>
 
       {/* ── Grid ── */}

@@ -50,7 +50,7 @@ export default function DashboardShell({
     recipes: savedRecipes.length,
   }
 
-  const now = Date.now() // eslint-disable-line react-hooks/purity
+  const now = Date.now() 
   const expiringItems = items.filter((item) => {
     const days = Math.ceil(
       (new Date(item.expiration_date).getTime() - now) /
@@ -77,7 +77,7 @@ export default function DashboardShell({
           <Link
             href="/dashboard"
             className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <Image src="/myplantry_logo1.png" alt="MyPlantry" width={32} height={32} className="rounded-xl" />
+            <Image src="/logo.png" alt="MyPlantry" width={32} height={32} className="rounded-xl" />
             <span className="font-bold text-lg tracking-tight text-[#003527]">
               MyPlantry
             </span>
@@ -152,7 +152,7 @@ export default function DashboardShell({
           <Link
             href="/dashboard"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Image src="/myplantry_logo1.png" alt="MyPlantry" width={28} height={28} className="rounded-xl" />
+            <Image src="/logo.png" alt="MyPlantry" width={28} height={28} className="rounded-xl" />
             <span className="font-bold text-lg tracking-tight text-[#003527]">
               MyPlantry
             </span>

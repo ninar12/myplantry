@@ -10,6 +10,22 @@ import {
 
 const CATEGORIES = ["Produce", "Dairy", "Meat", "Grains", "Canned Goods", "Pantry", "Other"];
 
+function classifyItem(name: string): string {
+  const n = name.toLowerCase();
+  const rules: [string[], string][] = [
+    [["apple","banana","orange","grape","berry","berries","strawberry","blueberry","raspberry","peach","plum","mango","pineapple","watermelon","melon","lemon","lime","avocado","tomato","lettuce","spinach","kale","arugula","broccoli","cauliflower","carrot","celery","cucumber","zucchini","squash","pepper","onion","garlic","potato","sweet potato","corn","peas","green bean","asparagus","mushroom","cilantro","parsley","basil","mint","ginger","beet","radish","cabbage","chard","leek","shallot","scallion","eggplant","yam","fig","cherry","kiwi","papaya","guava","coconut","produce","fruit","vegetable","veggie"], "Produce"],
+    [["milk","cheese","yogurt","butter","cream","sour cream","cream cheese","cottage cheese","half and half","heavy cream","kefir","buttermilk","cheddar","mozzarella","parmesan","brie","gouda","feta","swiss","provolone","ricotta","egg","eggs","dairy","oat milk","almond milk","soy milk"], "Dairy"],
+    [["chicken","beef","pork","turkey","lamb","duck","ground beef","ground turkey","steak","bacon","sausage","ham","salami","pepperoni","prosciutto","deli","hot dog","bratwurst","chorizo","brisket","ribs","lunchmeat","salmon","tuna","shrimp","fish","cod","tilapia","halibut","sardine","anchovy","crab","lobster","scallop","oyster","clam","mussels","squid","meat","seafood","poultry"], "Meat"],
+    [["bread","rice","pasta","flour","oat","oatmeal","cereal","quinoa","barley","farro","tortilla","wrap","bagel","english muffin","pita","noodle","ramen","couscous","couscous","bulgur","polenta","cornmeal","cracker","granola","grains","wheat","sourdough","baguette"], "Grains"],
+    [["canned","soup","beans","lentils","chickpeas","tomato sauce","tomato paste","coconut milk","broth","stock","diced tomatoes","crushed tomatoes","tomato can","bean","lentil","chickpea"], "Canned Goods"],
+    [["oil","olive oil","vegetable oil","vinegar","soy sauce","hot sauce","ketchup","mustard","mayo","mayonnaise","relish","pickle","jam","jelly","honey","syrup","peanut butter","almond butter","tahini","hummus","dressing","aioli","bbq sauce","ranch","balsamic","sesame oil","sugar","salt","pepper","spice","seasoning","baking powder","baking soda","yeast","vanilla","cinnamon","paprika","cumin","turmeric","oregano","thyme","rosemary","chili powder","cayenne","nutmeg","cocoa","chocolate chips","cornstarch","bread crumbs","frozen","ice cream","chip","chips","popcorn","pretzel","cookie","candy","chocolate","nut","almonds","cashews","walnuts","peanuts","trail mix","dried fruit","jerky","protein bar","granola bar","water","juice","soda","coffee","tea","kombucha","lemonade","wine","beer","energy drink","sports drink"], "Pantry"],
+  ];
+  for (const [keywords, cat] of rules) {
+    if (keywords.some(k => n.includes(k))) return cat;
+  }
+  return "Other";
+}
+
 const CATEGORY_ICON: Record<string, React.ElementType> = {
   Produce:       Apple,
   Dairy:         Milk,
@@ -33,7 +49,8 @@ const CATEGORY_COLOR: Record<string, { bg: string; icon: string }> = {
 export default function GroceryList() {
   const { groceryItems, addGroceryItem, removeGroceryItem, markGroceryBought, checkPantryDuplicate } = usePantry();
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("Produce");
+  const [category, setCategory] = useState("Other");
+  const [categoryManuallySet, setCategoryManuallySet] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [pendingItem, setPendingItem] = useState<{ name: string; category: string } | null>(null);
@@ -45,7 +62,7 @@ export default function GroceryList() {
     const duplicate = checkPantryDuplicate(name.trim());
     if (duplicate) {
       const daysLeft = Math.ceil(
-        (new Date(duplicate.expiration_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24) // eslint-disable-line react-hooks/purity
+        (new Date(duplicate.expiration_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24) 
       );
       if (daysLeft > 3) {
         setPendingItem({ name: name.trim(), category });
@@ -62,6 +79,8 @@ export default function GroceryList() {
     setDuplicateInfo(null);
     await addGroceryItem({ name: itemName, category: itemCategory, quantity: 1, bought: false });
     setName("");
+    setCategory("Other");
+    setCategoryManuallySet(false);
     setIsAdding(false);
   };
 
@@ -122,7 +141,10 @@ export default function GroceryList() {
               <input
                 type="text"
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e => {
+                  setName(e.target.value);
+                  if (!categoryManuallySet) setCategory(classifyItem(e.target.value));
+                }}
                 placeholder="Add a new item to your list..."
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
                 style={{ background: "#f5f3ef", border: "1px solid #bfc9c3", color: "#1b1c1a" }}
@@ -136,7 +158,7 @@ export default function GroceryList() {
                 <Tag className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#707974" }} />
                 <select
                   value={category}
-                  onChange={e => setCategory(e.target.value)}
+                  onChange={e => { setCategory(e.target.value); setCategoryManuallySet(true); }}
                   className="text-sm bg-transparent outline-none cursor-pointer pr-1"
                   style={{ color: "#404944" }}
                 >

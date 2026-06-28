@@ -97,7 +97,7 @@ export default function AddIngredient() {
   };
 
   const daysUntilDuplicateExpires = pendingItem
-    ? Math.ceil((new Date(pendingItem.duplicate.expiration_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) // eslint-disable-line react-hooks/purity
+    ? Math.ceil((new Date(pendingItem.duplicate.expiration_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) 
     : 0;
 
   const pillBase = "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all";

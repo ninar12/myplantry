@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseAiJsonObject } from "@/lib/parseAiResponse";
 import { PantryItem } from "@/lib/types";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { getOrCreateUser, supabase } from "@/lib/supabase";
 import { checkLimit, limitReachedResponse } from "@/lib/subscription";
 

@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai"
 import { NextRequest, NextResponse } from "next/server"
 import { parseAiJsonObject } from "@/lib/parseAiResponse"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth"
 import { supabase, getOrCreateUser } from "@/lib/supabase"
 import { checkLimit, limitReachedResponse } from "@/lib/subscription"
 
