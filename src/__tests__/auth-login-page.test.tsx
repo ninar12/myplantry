@@ -23,20 +23,34 @@ beforeEach(() => {
   mockSignIn.mockResolvedValue({ error: null });
 });
 
+// The credentials form is collapsed behind this toggle by default (NRH-128:
+// Google leads on signup/login) — reveal it before interacting with its fields.
+const revealEmailForm = () =>
+  fireEvent.click(screen.getByRole("button", { name: /or log in with email/i }));
+
 describe("Login page", () => {
   it("renders the welcome heading", () => {
     render(<LoginPage />);
     expect(screen.getByText(/welcome back/i)).toBeDefined();
   });
 
-  it("renders email and password inputs", () => {
+  it("renders a Google sign-in button and an email toggle before revealing the form", () => {
     render(<LoginPage />);
+    expect(screen.getByRole("button", { name: /continue with google/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /or log in with email/i })).toBeDefined();
+    expect(screen.queryByPlaceholderText("you@example.com")).toBeNull();
+  });
+
+  it("renders email and password inputs after revealing the email form", () => {
+    render(<LoginPage />);
+    revealEmailForm();
     expect(screen.getByPlaceholderText("you@example.com")).toBeDefined();
     expect(screen.getByPlaceholderText("••••••••")).toBeDefined();
   });
 
-  it("renders a Log In button", () => {
+  it("renders a Log In button after revealing the email form", () => {
     render(<LoginPage />);
+    revealEmailForm();
     expect(screen.getByRole("button", { name: /log in/i })).toBeDefined();
   });
 
@@ -54,6 +68,7 @@ describe("Login page", () => {
 
   it("shows password in plain text when show/hide is toggled", () => {
     render(<LoginPage />);
+    revealEmailForm();
     const input = screen.getByPlaceholderText("••••••••") as HTMLInputElement;
     expect(input.type).toBe("password");
     fireEvent.click(screen.getByRole("button", { name: "" })); // eye icon button
@@ -62,6 +77,7 @@ describe("Login page", () => {
 
   it("calls signIn with credentials on form submit", async () => {
     render(<LoginPage />);
+    revealEmailForm();
     fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "nina@example.com" } });
     fireEvent.change(screen.getByPlaceholderText("••••••••"), { target: { value: "password123" } });
     fireEvent.click(screen.getByRole("button", { name: /log in/i }));
@@ -78,6 +94,7 @@ describe("Login page", () => {
   it("redirects to /dashboard on successful login", async () => {
     mockSignIn.mockResolvedValueOnce({ error: null });
     render(<LoginPage />);
+    revealEmailForm();
     fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "nina@example.com" } });
     fireEvent.change(screen.getByPlaceholderText("••••••••"), { target: { value: "password123" } });
     fireEvent.click(screen.getByRole("button", { name: /log in/i }));
@@ -88,6 +105,7 @@ describe("Login page", () => {
   it("shows an error message on failed login", async () => {
     mockSignIn.mockResolvedValueOnce({ error: "CredentialsSignin" });
     render(<LoginPage />);
+    revealEmailForm();
     fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "bad@example.com" } });
     fireEvent.change(screen.getByPlaceholderText("••••••••"), { target: { value: "wrongpass" } });
     fireEvent.click(screen.getByRole("button", { name: /log in/i }));
@@ -98,6 +116,7 @@ describe("Login page", () => {
   it("does not redirect on failed login", async () => {
     mockSignIn.mockResolvedValueOnce({ error: "CredentialsSignin" });
     render(<LoginPage />);
+    revealEmailForm();
     fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "bad@example.com" } });
     fireEvent.change(screen.getByPlaceholderText("••••••••"), { target: { value: "wrongpass" } });
     fireEvent.click(screen.getByRole("button", { name: /log in/i }));

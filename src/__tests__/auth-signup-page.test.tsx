@@ -28,21 +28,35 @@ beforeEach(() => {
   mockFetch.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
 });
 
+// The credentials form is collapsed behind this toggle by default (NRH-128:
+// Google leads on signup/login) — reveal it before interacting with its fields.
+const revealEmailForm = () =>
+  fireEvent.click(screen.getByRole("button", { name: /or sign up with email/i }));
+
 describe("Sign Up page", () => {
   it("renders the Join MyPlantry heading", () => {
     render(<SignUpPage />);
     expect(screen.getByText(/join myplantry/i)).toBeDefined();
   });
 
-  it("renders name, email, and password inputs", () => {
+  it("renders a Google sign-in button and an email toggle before revealing the form", () => {
     render(<SignUpPage />);
+    expect(screen.getByRole("button", { name: /continue with google/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /or sign up with email/i })).toBeDefined();
+    expect(screen.queryByPlaceholderText(/nina rhone/i)).toBeNull();
+  });
+
+  it("renders name, email, and password inputs after revealing the email form", () => {
+    render(<SignUpPage />);
+    revealEmailForm();
     expect(screen.getByPlaceholderText(/nina rhone/i)).toBeDefined();
     expect(screen.getByPlaceholderText("you@example.com")).toBeDefined();
     expect(screen.getByPlaceholderText(/at least 8 characters/i)).toBeDefined();
   });
 
-  it("renders a Create Account button", () => {
+  it("renders a Create Account button after revealing the email form", () => {
     render(<SignUpPage />);
+    revealEmailForm();
     expect(screen.getByRole("button", { name: /create account/i })).toBeDefined();
   });
 
@@ -59,6 +73,7 @@ describe("Sign Up page", () => {
 
   it("calls /api/auth/register with name, email, and password on submit", async () => {
     render(<SignUpPage />);
+    revealEmailForm();
     fireEvent.change(screen.getByPlaceholderText(/nina rhone/i), { target: { value: "Nina" } });
     fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "nina@example.com" } });
     fireEvent.change(screen.getByPlaceholderText(/at least 8 characters/i), { target: { value: "password123" } });
@@ -74,6 +89,7 @@ describe("Sign Up page", () => {
 
   it("signs in with credentials after successful registration", async () => {
     render(<SignUpPage />);
+    revealEmailForm();
     fireEvent.change(screen.getByPlaceholderText(/nina rhone/i), { target: { value: "Nina" } });
     fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "nina@example.com" } });
     fireEvent.change(screen.getByPlaceholderText(/at least 8 characters/i), { target: { value: "password123" } });
@@ -90,6 +106,7 @@ describe("Sign Up page", () => {
 
   it("redirects to /dashboard after successful registration + sign in", async () => {
     render(<SignUpPage />);
+    revealEmailForm();
     fireEvent.change(screen.getByPlaceholderText(/nina rhone/i), { target: { value: "Nina" } });
     fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "nina@example.com" } });
     fireEvent.change(screen.getByPlaceholderText(/at least 8 characters/i), { target: { value: "password123" } });
@@ -101,6 +118,7 @@ describe("Sign Up page", () => {
   it("shows a server error message when registration fails", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, json: async () => ({ error: "An account with this email already exists." }) });
     render(<SignUpPage />);
+    revealEmailForm();
     fireEvent.change(screen.getByPlaceholderText(/nina rhone/i), { target: { value: "Nina" } });
     fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "taken@example.com" } });
     fireEvent.change(screen.getByPlaceholderText(/at least 8 characters/i), { target: { value: "password123" } });
@@ -112,6 +130,7 @@ describe("Sign Up page", () => {
   it("does not call signIn when registration fails", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, json: async () => ({ error: "An account with this email already exists." }) });
     render(<SignUpPage />);
+    revealEmailForm();
     fireEvent.change(screen.getByPlaceholderText(/nina rhone/i), { target: { value: "Nina" } });
     fireEvent.change(screen.getByPlaceholderText("you@example.com"), { target: { value: "taken@example.com" } });
     fireEvent.change(screen.getByPlaceholderText(/at least 8 characters/i), { target: { value: "password123" } });
