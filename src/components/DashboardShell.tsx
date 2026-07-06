@@ -179,7 +179,7 @@ export default function DashboardShell({
                   `Hey${displayName ? ` ${displayName.split(" ")[0]}` : ""}!`}
                 {active === "grocery" && "Grocery List"}
                 {active === "recipes" && "Recipes"}
-                {active === "chat" && "Cooking Consultant"}
+                {active === "chat" && "Ask YourPlantry"}
                 {active === "profile" && "Profile & Preferences"}
               </h1>
               <p className="text-[#003527]/50 text-sm mt-0.5">
@@ -187,7 +187,7 @@ export default function DashboardShell({
                 {active === "grocery" && "Items you need to pick up."}
                 {active === "recipes" &&
                   "Generate and save recipes from your pantry."}
-                {active === "chat" && "Ask me anything about cooking."}
+                {active === "chat" && "What do we need to cook?"}
                 {active === "profile" && "Manage your account and preferences."}
               </p>
               {active === "pantry" && items.length > 0 && (

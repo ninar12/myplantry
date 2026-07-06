@@ -4,9 +4,50 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePantry } from "@/context/PantryContext";
 import Image from "next/image";
-import { ChefHat, Trash2, Sparkles, X, Search, Link, FileText, Loader2 } from "lucide-react";
+import { Trash2, Sparkles, X, Search, Link, FileText, Loader2 } from "lucide-react";
 
 type ImportTab = "url" | "text";
+
+// Dish-type emoji, matched against the recipe title
+const RECIPE_EMOJI_MAP: [string[], string][] = [
+  [["pizza"], "🍕"],
+  [["taco"], "🌮"],
+  [["burrito"], "🌯"],
+  [["pasta", "spaghetti", "penne", "lasagna", "fettuccine", "macaroni"], "🍝"],
+  [["ramen", "pho", "noodle"], "🍜"],
+  [["sushi", "sashimi"], "🍣"],
+  [["curry"], "🍛"],
+  [["soup", "stew", "chowder", "chili"], "🍲"],
+  [["salad"], "🥗"],
+  [["sandwich", "panini", "grilled cheese"], "🥪"],
+  [["burger"], "🍔"],
+  [["pancake", "waffle", "french toast"], "🥞"],
+  [["omelette", "omelet", "frittata", "scrambled egg"], "🍳"],
+  [["stir fry", "stir-fry", "fried rice", "rice bowl", "rice"], "🍚"],
+  [["bread", "loaf", "bagel", "biscuit"], "🍞"],
+  [["cake", "cupcake", "brownie", "muffin"], "🍰"],
+  [["cookie"], "🍪"],
+  [["smoothie", "shake"], "🥤"],
+  [["chicken"], "🍗"],
+  [["steak", "beef"], "🥩"],
+  [["fish", "salmon", "shrimp", "seafood"], "🐟"],
+  [["pie"], "🥧"],
+  [["dumpling", "gyoza", "potsticker"], "🥟"],
+  [["kebab", "skewer"], "🍢"],
+];
+
+// Deterministic fallback so a recipe without a keyword match still gets a stable (not generic) icon
+const RECIPE_EMOJI_FALLBACKS = ["🍽️", "🥘", "🍴", "🧑‍🍳"];
+
+function getRecipeEmoji(title: string): string {
+  const lower = title.toLowerCase();
+  for (const [keywords, emoji] of RECIPE_EMOJI_MAP) {
+    if (keywords.some((k) => lower.includes(k))) return emoji;
+  }
+  let hash = 0;
+  for (let i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) | 0;
+  return RECIPE_EMOJI_FALLBACKS[Math.abs(hash) % RECIPE_EMOJI_FALLBACKS.length];
+}
 
 function ImportModal({ onClose }: { onClose: () => void }) {
   const { addSavedRecipe } = usePantry();
@@ -278,10 +319,10 @@ export default function SavedRecipes() {
               >
                 {/* Thumbnail */}
                 <div
-                  className="aspect-[4/3] flex items-center justify-center"
+                  className="aspect-[4/3] flex items-center justify-center text-4xl"
                   style={{ background: "linear-gradient(145deg, #f5f3ef 0%, #efeeea 100%)" }}
                 >
-                  <ChefHat className="w-9 h-9" style={{ color: "#bfc9c3" }} />
+                  {getRecipeEmoji(recipe.title)}
                 </div>
 
                 <div className="p-4">

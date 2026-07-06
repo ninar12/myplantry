@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Camera, Receipt, Loader2, Sparkles, X, CheckCircle2 } from "lucide-react"
+import { Camera, Receipt, PencilLine, Loader2, Sparkles, X, CheckCircle2 } from "lucide-react"
 import { usePantry } from "@/context/PantryContext"
 
 type ScanType = "receipt" | "fridge" | "handwritten"
@@ -121,6 +121,43 @@ export default function PhotoUploadStub({
 
   const isScanning = scanProgress !== null
 
+  const idleContent: Record<ScanType, { icons: React.ReactNode; heading: string; sub: string }> = {
+    fridge: {
+      icons: (
+        <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#003527]/10 group-hover:-translate-y-1 transition-transform">
+          <Camera className="w-5 h-5 text-[#2b6954]" />
+        </div>
+      ),
+      heading: "Snap a photo of your fridge or shelf",
+      sub: "AI will identify everything inside",
+    },
+    receipt: {
+      icons: (
+        <div className="flex -space-x-2">
+          <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#003527]/10 z-10 group-hover:-translate-y-1 transition-transform">
+            <Camera className="w-5 h-5 text-[#2b6954]" />
+          </div>
+          <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#003527]/10 group-hover:-translate-y-1 transition-transform delay-75">
+            <Receipt className="w-5 h-5 text-[#2b6954]" />
+          </div>
+        </div>
+      ),
+      heading: "Scan your grocery receipt",
+      sub: "Paper or on-screen — one or more photos",
+    },
+    handwritten: {
+      icons: (
+        <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#003527]/10 group-hover:-translate-y-1 transition-transform">
+          <PencilLine className="w-5 h-5 text-[#2b6954]" />
+        </div>
+      ),
+      heading: "Photo of your handwritten list",
+      sub: "AI will transcribe the items for you",
+    },
+  }
+
+  const { icons, heading, sub } = idleContent[scanType]
+
   return (
     <div className="flex flex-col gap-2">
       <label className="w-full relative overflow-hidden group border-2 border-dashed border-[#2b6954]/30 bg-[#2b6954]/5 hover:bg-[#2b6954]/10 hover:border-[#2b6954]/50 transition-all rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer">
@@ -139,7 +176,7 @@ export default function PhotoUploadStub({
             <span className="text-[#003527] font-medium text-sm flex items-center gap-2">
               {scanProgress!.total > 1
                 ? `Scanning ${scanProgress!.current} of ${scanProgress!.total}…`
-                : "Extracting items with AI"}{" "}
+                : "Identifying items with AI"}{" "}
               <Sparkles className="w-3 h-3 text-[#2b6954]" />
             </span>
             {scanProgress!.total > 1 && (
@@ -153,20 +190,13 @@ export default function PhotoUploadStub({
           </>
         ) : (
           <>
-            <div className="flex -space-x-2">
-              <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#003527]/10 z-10 group-hover:-translate-y-1 transition-transform">
-                <Camera className="w-5 h-5 text-[#2b6954]" />
-              </div>
-              <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#003527]/10 group-hover:-translate-y-1 transition-transform delay-75">
-                <Receipt className="w-5 h-5 text-[#2b6954]" />
-              </div>
-            </div>
+            {icons}
             <div className="text-center">
               <span className="block text-[#003527] font-semibold text-sm mb-0.5">
-                Wait, here&apos;s a receipt...
+                {heading}
               </span>
               <span className="block text-[#003527]/60 text-xs">
-                Scan one or more photos at once
+                {sub}
               </span>
             </div>
           </>

@@ -16,7 +16,7 @@ const PLANS = [
       "5 saved recipes",
       "10 AI recipe generations/day",
       "Grocery list",
-      "Cooking consultant",
+      "Cooking help",
     ],
     locked: [
       "Photo & receipt scanning",
@@ -38,7 +38,7 @@ const PLANS = [
       "Unlimited AI recipe generation",
       "Photo & receipt scanning",
       "Grocery list",
-      "Cooking consultant",
+      "Cooking help",
       "Priority support",
     ],
     locked: [],

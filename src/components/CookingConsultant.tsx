@@ -135,7 +135,7 @@ export default function CookingConsultant({
             Kitchen AI
           </p>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-            Your Cooking Consultant
+            Ask YourPlantry
           </p>
         </div>
         <div className="ml-auto flex items-center gap-3">

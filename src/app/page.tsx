@@ -119,6 +119,12 @@ export default async function Home() {
         <div className="relative max-w-7xl mx-auto px-6 md:px-8 pt-16 md:pt-24 pb-8 grid md:grid-cols-2 gap-12 md:gap-16 items-center">
           {/* Left — copy */}
           <div className="flex flex-col gap-7">
+            <span
+              className="text-xs font-bold tracking-widest uppercase"
+              style={{ color: "#2b6954" }}>
+              Your plan + your pantry
+            </span>
+
             <h1
               className="text-5xl md:text-6xl font-extrabold leading-[1.05]"
               style={{

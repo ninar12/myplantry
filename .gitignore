@@ -35,6 +35,9 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# local MCP server config (contains access tokens)
+.mcp.json
 /scripts/data/*
 
 # emoji assets (served from Supabase Storage)
