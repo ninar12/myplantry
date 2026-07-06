@@ -36,17 +36,76 @@ const RECIPE_EMOJI_MAP: [string[], string][] = [
   [["kebab", "skewer"], "🍢"],
 ];
 
-// Deterministic fallback so a recipe without a keyword match still gets a stable (not generic) icon
+// Ingredient-level emoji, matched against each ingredient string — fills out
+// the combo when the title alone doesn't yield enough dish-type matches
+const INGREDIENT_EMOJI_MAP: [string[], string][] = [
+  [["chicken"], "🍗"],
+  [["beef", "steak", "ground beef"], "🥩"],
+  [["pork", "ham", "bacon"], "🥓"],
+  [["shrimp", "prawn"], "🍤"],
+  [["salmon", "tuna", "fish", "cod", "tilapia"], "🐟"],
+  [["egg"], "🥚"],
+  [["tofu"], "🫘"],
+  [["tomato"], "🍅"],
+  [["onion", "shallot"], "🧅"],
+  [["garlic"], "🧄"],
+  [["potato"], "🥔"],
+  [["carrot"], "🥕"],
+  [["broccoli"], "🥦"],
+  [["spinach", "kale", "lettuce", "greens"], "🥬"],
+  [["mushroom"], "🍄"],
+  [["pepper", "bell pepper", "chili", "jalape"], "🌶️"],
+  [["corn"], "🌽"],
+  [["avocado"], "🥑"],
+  [["cucumber"], "🥒"],
+  [["cheese"], "🧀"],
+  [["butter"], "🧈"],
+  [["milk", "cream"], "🥛"],
+  [["rice"], "🍚"],
+  [["pasta", "noodle", "spaghetti"], "🍝"],
+  [["bread", "baguette", "bun"], "🍞"],
+  [["lemon", "lime"], "🍋"],
+  [["basil", "cilantro", "parsley", "herb"], "🌿"],
+  [["bean", "lentil", "chickpea"], "🫘"],
+  [["olive oil", "olive"], "🫒"],
+];
+
+// Deterministic fallback so a recipe without any keyword match still gets a stable (not generic) icon
 const RECIPE_EMOJI_FALLBACKS = ["🍽️", "🥘", "🍴", "🧑‍🍳"];
 
-function getRecipeEmoji(title: string): string {
+// Returns up to 3 emojis for a recipe: dish-type matches from the title first,
+// topped up with ingredient matches, falling back to one stable icon if nothing matches.
+function getRecipeEmojis(title: string, ingredients: string[]): string[] {
   const lower = title.toLowerCase();
+  const matches: string[] = [];
+
   for (const [keywords, emoji] of RECIPE_EMOJI_MAP) {
-    if (keywords.some((k) => lower.includes(k))) return emoji;
+    if (matches.length >= 3) break;
+    if (keywords.some((k) => lower.includes(k)) && !matches.includes(emoji)) {
+      matches.push(emoji);
+    }
   }
-  let hash = 0;
-  for (let i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) | 0;
-  return RECIPE_EMOJI_FALLBACKS[Math.abs(hash) % RECIPE_EMOJI_FALLBACKS.length];
+
+  if (matches.length < 3) {
+    for (const ingredient of ingredients) {
+      if (matches.length >= 3) break;
+      const ingredientLower = ingredient.toLowerCase();
+      for (const [keywords, emoji] of INGREDIENT_EMOJI_MAP) {
+        if (keywords.some((k) => ingredientLower.includes(k)) && !matches.includes(emoji)) {
+          matches.push(emoji);
+          break;
+        }
+      }
+    }
+  }
+
+  if (matches.length === 0) {
+    let hash = 0;
+    for (let i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) | 0;
+    matches.push(RECIPE_EMOJI_FALLBACKS[Math.abs(hash) % RECIPE_EMOJI_FALLBACKS.length]);
+  }
+
+  return matches;
 }
 
 function ImportModal({ onClose }: { onClose: () => void }) {
@@ -319,10 +378,20 @@ export default function SavedRecipes() {
               >
                 {/* Thumbnail */}
                 <div
-                  className="aspect-[4/3] flex items-center justify-center text-4xl"
+                  className="aspect-[4/3] flex items-center justify-center"
                   style={{ background: "linear-gradient(145deg, #f5f3ef 0%, #efeeea 100%)" }}
                 >
-                  {getRecipeEmoji(recipe.title)}
+                  <div className="flex -space-x-3">
+                    {getRecipeEmojis(recipe.title, recipe.ingredients).map((emoji, idx) => (
+                      <div
+                        key={idx}
+                        className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#003527]/10 text-xl"
+                        style={{ zIndex: 10 - idx }}
+                      >
+                        {emoji}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="p-4">
