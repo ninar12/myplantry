@@ -20,22 +20,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  const { email, name, created_at } = payload.record as {
-    email?: string;
-    name?: string | null;
-    created_at?: string;
-  };
-
-  const message = `New Plantry signup: ${email ?? name ?? "unknown"} at ${created_at ?? "unknown time"}`;
-
-  try {
-    await fetch(`https://ntfy.sh/${process.env.NTFY_TOPIC}`, {
-      method: "POST",
-      body: message,
-    });
-  } catch {
-    // Don't let a failed ntfy call surface as a 500 — Supabase would retry the webhook.
-  }
+  // ntfy notifications are temporarily disabled: the topic is a free-tier ntfy.sh
+  // topic that can't be access-restricted, so publishing here would broadcast real
+  // user emails on a publicly readable topic. Re-enable once this is swapped for a
+  // private Discord webhook.
 
   return NextResponse.json({ ok: true });
 }

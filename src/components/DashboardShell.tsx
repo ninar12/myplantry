@@ -22,6 +22,7 @@ import AddIngredient from "@/components/AddIngredient"
 import BulkAddIngredients from "@/components/BulkAddIngredients"
 import UpgradePrompt from "@/components/UpgradePrompt"
 import ProfilePage from "@/components/ProfilePage"
+import BugReportModal from "@/components/BugReportModal"
 import { usePantry } from "@/context/PantryContext"
 
 type Section = "pantry" | "grocery" | "recipes" | "chat" | "profile"
@@ -41,6 +42,8 @@ export default function DashboardShell({
   const [active, setActive] = useState<Section>("pantry")
   const [showAdd, setShowAdd] = useState(false)
   const [addMode, setAddMode] = useState<"single" | "bulk">("single")
+  const [showBetaBanner, setShowBetaBanner] = useState(true)
+  const [showBugReport, setShowBugReport] = useState(false)
   const { data: session } = useSession()
   const { items, groceryItems, savedRecipes } = usePantry()
 
@@ -171,6 +174,30 @@ export default function DashboardShell({
 
         {/* Page content */}
         <main className="flex-1 px-4 py-6 pb-28 lg:pb-10 lg:px-8">
+          {/* Beta banner */}
+          {showBetaBanner && (
+            <div
+              className="flex items-center gap-3 rounded-2xl px-4 py-3 mb-5 text-sm"
+              style={{ background: "#cce6d9", color: "#003527" }}
+            >
+              <span className="flex-1">
+                🌱 You&apos;re testing an early beta — some things may be slow or a little
+                rough.{" "}
+                <button
+                  onClick={() => setShowBugReport(true)}
+                  className="font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity">
+                  Found something? Report it here.
+                </button>
+              </span>
+              <button
+                onClick={() => setShowBetaBanner(false)}
+                className="p-1 rounded-lg hover:bg-black/5 transition-colors flex-shrink-0"
+                aria-label="Dismiss banner">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Section header */}
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -338,6 +365,8 @@ export default function DashboardShell({
           })}
         </nav>
       </div>
+
+      {showBugReport && <BugReportModal onClose={() => setShowBugReport(false)} />}
     </div>
   )
 }

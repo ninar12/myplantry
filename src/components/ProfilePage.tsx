@@ -11,7 +11,9 @@ import {
   Save,
   Loader2,
   LogOut,
+  Bug,
 } from "lucide-react"
+import BugReportModal from "@/components/BugReportModal"
 
 interface Preferences {
   display_name: string | null
@@ -110,6 +112,7 @@ export default function ProfilePage() {
   const [savingPrefs, setSavingPrefs] = useState(false)
   const [profileSaved, setProfileSaved] = useState(false)
   const [prefsSaved, setPrefsSaved] = useState(false)
+  const [showBugReport, setShowBugReport] = useState(false)
 
   const email = session?.user?.email ?? ""
   const avatarInitial =
@@ -247,6 +250,12 @@ export default function ProfilePage() {
             {profileSaved ? "Saved!" : "Save Changes"}
           </button>
           <button
+            onClick={() => setShowBugReport(true)}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-[#003527]/60 hover:bg-[#003527]/5 transition-colors">
+            <Bug className="w-4 h-4" />
+            Report a Bug
+          </button>
+          <button
             onClick={() => signOut()}
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
             <LogOut className="w-4 h-4" />
@@ -254,6 +263,8 @@ export default function ProfilePage() {
           </button>
         </div>
       </div>
+
+      {showBugReport && <BugReportModal onClose={() => setShowBugReport(false)} />}
 
       {/* Preferences */}
       <div className="bg-white rounded-2xl shadow-sm border border-[#003527]/10 p-6">

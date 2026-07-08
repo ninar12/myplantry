@@ -40,6 +40,12 @@ yarn-error.log*
 .mcp.json
 /scripts/data/*
 
+# local Claude Code session state
+/.claude/
+
+# local Supabase CLI state
+/supabase/.temp/
+
 # emoji assets (served from Supabase Storage)
 /public/emojis/
 # typescript
