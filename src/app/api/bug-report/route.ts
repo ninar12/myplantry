@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabase, getOrCreateUser } from "@/lib/supabase";
+import { notifyDiscord } from "@/lib/notify";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -28,10 +29,7 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // ntfy notifications are temporarily disabled: the topic is a free-tier ntfy.sh
-  // topic that can't be access-restricted, so publishing here would broadcast real
-  // user emails + bug text on a publicly readable topic. Re-enable once this is
-  // swapped for a private Discord webhook.
+  await notifyDiscord(`🐛 Bug report from ${session.user.email}: ${description.trim().slice(0, 200)}`);
 
   return NextResponse.json({ id: data.id });
 }

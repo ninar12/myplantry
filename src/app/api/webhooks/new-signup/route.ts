@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { notifyDiscord } from "@/lib/notify";
 
 interface SupabaseWebhookPayload {
   type: string;
@@ -20,10 +21,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  // ntfy notifications are temporarily disabled: the topic is a free-tier ntfy.sh
-  // topic that can't be access-restricted, so publishing here would broadcast real
-  // user emails on a publicly readable topic. Re-enable once this is swapped for a
-  // private Discord webhook.
+  const { email, name, created_at } = payload.record as {
+    email?: string;
+    name?: string | null;
+    created_at?: string;
+  };
+
+  await notifyDiscord(`New Plantry signup: ${email ?? name ?? "unknown"} at ${created_at ?? "unknown time"}`);
 
   return NextResponse.json({ ok: true });
 }
