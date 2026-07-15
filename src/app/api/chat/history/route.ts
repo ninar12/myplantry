@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { supabase, getOrCreateUser } from "@/lib/supabase"
 
+export const dynamic = "force-dynamic"
+
 // GET /api/chat/history — fetch last 50 messages for the current user
 export async function GET() {
   const session = await getServerSession(authOptions)
