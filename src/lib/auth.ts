@@ -1,7 +1,7 @@
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { NextAuthOptions } from "next-auth";
-import { supabase } from "@/lib/supabase";
+import { supabase, getOrCreateUser } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 
 function getRequiredEnv(name: "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "NEXTAUTH_SECRET") {
@@ -42,6 +42,21 @@ export const authOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: "/auth/login",
+  },
+  events: {
+    async signIn({ user, account }) {
+      try {
+        if (!user.email) return;
+        const userId = await getOrCreateUser(user.email, user.name);
+        await supabase.from("login_events").insert({
+          user_id: userId,
+          provider: account?.provider ?? "unknown",
+        });
+      } catch (e) {
+        // Visibility logging must never block a login
+        console.error("login event log error:", e);
+      }
+    },
   },
   secret: getRequiredEnv("NEXTAUTH_SECRET"),
 };
