@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { supabase, getOrCreateUser } from "@/lib/supabase"
 import { PantryItem } from "@/lib/types"
+import { checkAiUsageLimit, logAiUsage, aiUsageLimitResponse } from "@/lib/aiUsage"
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! })
 
@@ -20,6 +21,13 @@ async function saveMessages(userId: string, messages: { role: string; content: s
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const userId = await getOrCreateUser(session.user.email, session.user.name)
+
+  const usageOk = await checkAiUsageLimit(userId, "chat", 100)
+  if (!usageOk) return aiUsageLimitResponse()
+
   const { messages, pantryItems }: { messages: Message[]; pantryItems: PantryItem[] } =
     await req.json()
 
@@ -56,6 +64,7 @@ Give practical, specific cooking advice. Reference actual items from their pantr
   })
 
   const response = await chat.sendMessage({ message: lastMessage.content })
+  await logAiUsage(userId, "chat")
   const reply =
     response.candidates?.[0]?.content?.parts?.[0]?.text ??
     "Sorry, I couldn't generate a response."
@@ -63,16 +72,13 @@ Give practical, specific cooking advice. Reference actual items from their pantr
   // Persist both the user message and assistant reply before returning — on Vercel's
   // serverless runtime, unawaited work isn't guaranteed to complete after the response
   // is sent, so this must be awaited even though a save failure shouldn't fail the reply.
-  if (session?.user?.email) {
-    try {
-      const userId = await getOrCreateUser(session.user.email, session.user.name)
-      await saveMessages(userId, [
-        { role: "user", content: lastMessage.content },
-        { role: "assistant", content: reply },
-      ])
-    } catch (e) {
-      console.error("chat save error:", e)
-    }
+  try {
+    await saveMessages(userId, [
+      { role: "user", content: lastMessage.content },
+      { role: "assistant", content: reply },
+    ])
+  } catch (e) {
+    console.error("chat save error:", e)
   }
 
   return NextResponse.json({ reply })

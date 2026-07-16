@@ -1,6 +1,10 @@
 import { GoogleGenAI } from "@google/genai"
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { getOrCreateUser } from "@/lib/supabase"
+import { checkAiUsageLimit, logAiUsage, aiUsageLimitResponse } from "@/lib/aiUsage"
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! })
 
@@ -80,6 +84,10 @@ async function cacheResult(name: string, data: Record<string, unknown>) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = await getOrCreateUser(session.user.email, session.user.name)
+
   const { name } = await req.json()
   if (!name?.trim()) return NextResponse.json(FALLBACK)
 
@@ -93,9 +101,14 @@ export async function POST(req: NextRequest) {
     console.error("shelf-life DB lookup error:", e)
   }
 
+  // --- Usage gate before the Gemini fallback tier ---
+  const usageOk = await checkAiUsageLimit(userId, "shelf_life", 200)
+  if (!usageOk) return aiUsageLimitResponse()
+
   // --- Tier 2: Gemini fallback ---
   try {
     const geminiResult = await lookupGemini(name)
+    await logAiUsage(userId, "shelf_life")
 
     // --- Tier 3: Cache back (fire and forget) ---
     cacheResult(name, geminiResult).catch((e) =>

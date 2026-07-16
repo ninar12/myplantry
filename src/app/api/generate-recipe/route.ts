@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getOrCreateUser, supabase } from "@/lib/supabase";
 import { checkLimit, limitReachedResponse } from "@/lib/subscription";
+import { checkAiUsageLimit, logAiUsage, aiUsageLimitResponse } from "@/lib/aiUsage";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! });
 
@@ -17,6 +18,9 @@ export async function POST(req: NextRequest) {
 
   const { allowed, plan, limit } = await checkLimit(userId, "generate_recipe");
   if (!allowed) return limitReachedResponse(plan, limit, "generate_recipe");
+
+  const usageOk = await checkAiUsageLimit(userId, "generate_recipe", 100);
+  if (!usageOk) return aiUsageLimitResponse();
 
   const { items, prompt: userPrompt }: { items: PantryItem[]; prompt?: string } = await req.json();
 
@@ -72,6 +76,7 @@ pantry_matches must list each ingredient name that comes from the user's pantry 
     model: "gemini-3.1-pro-preview",
     contents: [{ parts: [{ text: prompt }] }],
   });
+  await logAiUsage(userId, "generate_recipe");
 
   const raw = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
   const parsed = parseAiJsonObject(raw) as {
