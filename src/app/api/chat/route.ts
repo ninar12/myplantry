@@ -60,16 +60,19 @@ Give practical, specific cooking advice. Reference actual items from their pantr
     response.candidates?.[0]?.content?.parts?.[0]?.text ??
     "Sorry, I couldn't generate a response."
 
-  // Persist both the user message and assistant reply (fire and forget)
+  // Persist both the user message and assistant reply before returning — on Vercel's
+  // serverless runtime, unawaited work isn't guaranteed to complete after the response
+  // is sent, so this must be awaited even though a save failure shouldn't fail the reply.
   if (session?.user?.email) {
-    getOrCreateUser(session.user.email, session.user.name)
-      .then((userId) =>
-        saveMessages(userId, [
-          { role: "user", content: lastMessage.content },
-          { role: "assistant", content: reply },
-        ])
-      )
-      .catch((e) => console.error("chat save error:", e))
+    try {
+      const userId = await getOrCreateUser(session.user.email, session.user.name)
+      await saveMessages(userId, [
+        { role: "user", content: lastMessage.content },
+        { role: "assistant", content: reply },
+      ])
+    } catch (e) {
+      console.error("chat save error:", e)
+    }
   }
 
   return NextResponse.json({ reply })
