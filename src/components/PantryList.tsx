@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePantry } from "@/context/PantryContext";
 import { PantryItem } from "@/lib/types";
 import Image from "next/image";
@@ -258,7 +258,15 @@ export default function PantryList() {
     else updateItem(item.id, { quantity: remaining });
   };
 
+  // Guards against out-of-order responses: a fast keystroke can fire a recalc that
+  // resolves after a later one (e.g. typing "chicken" fires a lookup per character —
+  // debounced below, but a location change while a name lookup is still in flight
+  // hits this too). Only the most recently *started* call is allowed to write back.
+  const recalcTokenRef = useRef(0);
+  const nameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const recalcExpiry = async (name: string, location: EditForm["location"], opened: boolean) => {
+    const token = ++recalcTokenRef.current;
     setIsRecalculating(true);
     try {
       const res = await fetch("/api/shelf-life", {
@@ -267,6 +275,7 @@ export default function PantryList() {
         body: JSON.stringify({ name }),
       });
       const data = await res.json();
+      if (token !== recalcTokenRef.current) return; // superseded by a newer recalc
       const bestFallback = data.fridge_days ?? data.pantry_days ?? data.freezer_days ?? 7;
       const days =
         location === "pantry"  ? (data.pantry_days  ?? data.fridge_days  ?? data.freezer_days ?? 7)
@@ -277,7 +286,19 @@ export default function PantryList() {
         .split("T")[0];
       setEditForm((f) => ({ ...f, expiration_date }));
     } catch { /* leave existing date */ }
-    finally { setIsRecalculating(false); }
+    finally { if (token === recalcTokenRef.current) setIsRecalculating(false); }
+  };
+
+  // Name recalc is triggered on every keystroke — debounce it so we're not firing a
+  // shelf-life lookup (often a ~1-5s Gemini fallback call) per character typed.
+  const recalcExpiryDebounced = (name: string, location: EditForm["location"], opened: boolean) => {
+    if (nameDebounceRef.current) clearTimeout(nameDebounceRef.current);
+    nameDebounceRef.current = setTimeout(() => recalcExpiry(name, location, opened), 500);
+  };
+
+  const cancelPendingRecalc = () => {
+    if (nameDebounceRef.current) clearTimeout(nameDebounceRef.current);
+    recalcTokenRef.current++; // invalidate any in-flight recalc response
   };
 
   const startEdit = (item: PantryItem) => {
@@ -291,30 +312,13 @@ export default function PantryList() {
 
   const saveEdit = async () => {
     if (!editingId) return;
-    const original = items.find((i) => i.id === editingId);
-    const nameChanged = original && editForm.name.trim().toLowerCase() !== original.name.toLowerCase();
-    const locationChanged = original && editForm.location !== original.location;
+    cancelPendingRecalc();
 
-    let expiration_date = new Date(editForm.expiration_date).toISOString();
-
-    if (nameChanged || locationChanged) {
-      try {
-        const res = await fetch("/api/shelf-life", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: editForm.name.trim() }),
-        });
-        const data = await res.json();
-        const isOpened = original?.opened ?? false;
-        const loc = editForm.location;
-        const bestFallback = data.fridge_days ?? data.pantry_days ?? data.freezer_days ?? 7;
-        const days =
-          loc === "pantry"  ? (data.pantry_days  ?? data.fridge_days  ?? data.freezer_days ?? 7)
-          : loc === "freezer" ? (data.freezer_days ?? data.fridge_days  ?? data.pantry_days  ?? 7)
-          : (isOpened && data.opened_fridge_days != null ? data.opened_fridge_days : (data.fridge_days ?? bestFallback));
-        expiration_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-      } catch { /* keep manual date on error */ }
-    }
+    // editForm.expiration_date is already kept current by recalcExpiry as the user
+    // edits the name/location (the Save button is disabled while isRecalculating is
+    // true, so this is never stale) — and it respects a manual edit to the date field
+    // too. No need to hit /api/shelf-life a second time here.
+    const expiration_date = new Date(editForm.expiration_date).toISOString();
 
     updateItem(editingId, {
       name: editForm.name.trim(), category: editForm.category.trim(),
@@ -378,7 +382,7 @@ export default function PantryList() {
         <div key={item.id} className="rounded-2xl px-4 py-4 col-span-full" style={{ background: "#ffffff", border: "1px solid #bfc9c3" }}>
           <div className="grid grid-cols-2 gap-2.5 mb-3">
             {[
-              { key: "name",            label: "Name",    type: "text", value: editForm.name,            onChange: (v: string) => { setEditForm(f => ({ ...f, name: v })); recalcExpiry(v, editForm.location, items.find(i => i.id === editingId)?.opened ?? false); } },
+              { key: "name",            label: "Name",    type: "text", value: editForm.name,            onChange: (v: string) => { setEditForm(f => ({ ...f, name: v })); recalcExpiryDebounced(v, editForm.location, items.find(i => i.id === editingId)?.opened ?? false); } },
               { key: "category",        label: "Category",type: "text", value: editForm.category,        onChange: (v: string) => setEditForm(f => ({ ...f, category: v })) },
               { key: "amount",          label: "Amount",  type: "text", value: editForm.amount,          onChange: (v: string) => setEditForm(f => ({ ...f, amount: v })), placeholder: "e.g. 500g" },
               { key: "expiration_date", label: "Expires", type: "date", value: editForm.expiration_date, onChange: (v: string) => setEditForm(f => ({ ...f, expiration_date: v })) },
@@ -424,7 +428,7 @@ export default function PantryList() {
             <button onClick={saveEdit} disabled={isRecalculating} className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl text-white transition-all hover:opacity-90 disabled:opacity-60" style={{ background: "linear-gradient(135deg, #003527 0%, #064e3b 100%)" }}>
               <Check className="w-3.5 h-3.5" /> {isRecalculating ? "Recalculating…" : "Save"}
             </button>
-            <button onClick={() => setEditingId(null)} className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl transition-colors" style={{ background: "#f5f3ef", color: "#404944" }}>
+            <button onClick={() => { cancelPendingRecalc(); setEditingId(null); }} className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl transition-colors" style={{ background: "#f5f3ef", color: "#404944" }}>
               <X className="w-3.5 h-3.5" /> Cancel
             </button>
           </div>
