@@ -75,7 +75,7 @@ ${userGuidance}Return ONLY a raw JSON object — no markdown fences, no extra te
 pantry_matches must list each ingredient name that comes from the user's pantry (normalized, lowercase).`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3.1-pro-preview",
+    model: "gemini-3.8-flash",
     contents: [{ parts: [{ text: prompt }] }],
   });
   await checkAiUsageAnomaly(userId);

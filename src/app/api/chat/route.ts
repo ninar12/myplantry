@@ -62,7 +62,7 @@ Give practical, specific cooking advice. Reference actual items from their pantr
   let reply: string
   try {
     const chat = ai.chats.create({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-3.8-flash",
       config: { systemInstruction },
       history,
     })

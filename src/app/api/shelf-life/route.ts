@@ -49,7 +49,7 @@ Given the food item "${name}", return ONLY a raw JSON object. No markdown, no fe
 All values assume: fresh from purchase, properly stored, unopened unless noted.`
 
   const responsePromise = ai.models.generateContent({
-    model: "gemini-3.1-pro-preview",
+    model: "gemini-3.8-flash",
     contents: [{ parts: [{ text: prompt }] }],
   })
 

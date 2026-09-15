@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   const prompt = PROMPTS[imageType] + SHARED_OUTPUT_INSTRUCTIONS;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3.1-pro-preview",
+    model: "gemini-3.8-flash",
     contents: [
       {
         parts: [

@@ -150,7 +150,7 @@ Content:
 ${content}`
 
   const response = await ai.models.generateContent({
-    model: "gemini-3.1-pro-preview",
+    model: "gemini-3.8-flash",
     contents: [{ parts: [{ text: geminiPrompt }] }],
   })
   await checkAiUsageAnomaly(userId)
