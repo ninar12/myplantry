@@ -349,7 +349,7 @@ export default function DashboardShell({
                     }`}
                   />
                   {count !== undefined && count > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#2b6954] rounded-full text-[8px] font-bold text-[#003527] flex items-center justify-center leading-none">
+                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#2b6954] rounded-full text-[8px] font-bold text-white flex items-center justify-center leading-none">
                       {count > 9 ? "9+" : count}
                     </span>
                   )}

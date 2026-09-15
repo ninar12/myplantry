@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getOrCreateUser } from "@/lib/supabase"
-import { checkAiUsageLimit, logAiUsage, aiUsageLimitResponse } from "@/lib/aiUsage"
+import { reserveAiUsage, checkAiUsageAnomaly, aiUsageLimitResponse, aiRateLimitResponse } from "@/lib/aiUsage"
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! })
 
@@ -102,13 +102,15 @@ export async function POST(req: NextRequest) {
   }
 
   // --- Usage gate before the Gemini fallback tier ---
-  const usageOk = await checkAiUsageLimit(userId, "shelf_life", 200)
-  if (!usageOk) return aiUsageLimitResponse()
+  const reservation = await reserveAiUsage(userId, "shelf_life", 200)
+  if (!reservation.allowed) {
+    return reservation.reason === "rate_limit" ? aiRateLimitResponse() : aiUsageLimitResponse()
+  }
 
   // --- Tier 2: Gemini fallback ---
   try {
     const geminiResult = await lookupGemini(name)
-    await logAiUsage(userId, "shelf_life")
+    await checkAiUsageAnomaly(userId)
 
     // --- Tier 3: Cache back (fire and forget) ---
     cacheResult(name, geminiResult).catch((e) =>

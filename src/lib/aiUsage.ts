@@ -2,15 +2,25 @@ import { NextResponse } from "next/server";
 import { supabase } from "./supabase";
 import { notifyDiscord } from "./notify";
 
-export async function checkAiUsageLimit(userId: string, endpoint: string, dailyLimit: number) {
-  const today = new Date().toISOString().split("T")[0];
-  const { count } = await supabase
-    .from("ai_usage_log")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("endpoint", endpoint)
-    .gte("created_at", `${today}T00:00:00.000Z`);
-  return (count ?? 0) < dailyLimit;
+// Atomically checks the per-minute burst cap and the per-endpoint daily cap,
+// and reserves the slot (inserts the usage row) in the same DB call — a
+// Postgres advisory lock serializes concurrent calls per user, so concurrent
+// requests can't all read the same count and all pass the cap.
+export async function reserveAiUsage(
+  userId: string,
+  endpoint: string,
+  dailyLimit: number,
+  maxPerMinute = 100
+): Promise<{ allowed: boolean; reason: "rate_limit" | "daily_limit" | null }> {
+  const { data, error } = await supabase.rpc("reserve_ai_usage", {
+    p_user_id: userId,
+    p_endpoint: endpoint,
+    p_daily_limit: dailyLimit,
+    p_max_per_minute: maxPerMinute,
+  });
+  if (error) throw error;
+  const row = data?.[0];
+  return { allowed: row?.allowed ?? false, reason: row?.reason ?? null };
 }
 
 export function aiUsageLimitResponse() {
@@ -20,9 +30,15 @@ export function aiUsageLimitResponse() {
   );
 }
 
-export async function logAiUsage(userId: string | null, endpoint: string) {
+export function aiRateLimitResponse() {
+  return NextResponse.json(
+    { error: "Too many requests, please slow down and try again in a moment" },
+    { status: 429 }
+  );
+}
+
+export async function checkAiUsageAnomaly(userId: string | null) {
   if (!userId) return;
-  await supabase.from("ai_usage_log").insert({ user_id: userId, endpoint });
 
   // Cheap anomaly check — a single count query, wrapped so it never blocks the caller.
   try {

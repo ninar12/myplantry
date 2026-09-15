@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { supabase, getOrCreateUser } from "@/lib/supabase"
 import { PantryItem } from "@/lib/types"
-import { checkAiUsageLimit, logAiUsage, aiUsageLimitResponse } from "@/lib/aiUsage"
+import { reserveAiUsage, checkAiUsageAnomaly, aiUsageLimitResponse, aiRateLimitResponse } from "@/lib/aiUsage"
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! })
 
@@ -25,8 +25,10 @@ export async function POST(req: NextRequest) {
 
   const userId = await getOrCreateUser(session.user.email, session.user.name)
 
-  const usageOk = await checkAiUsageLimit(userId, "chat", 100)
-  if (!usageOk) return aiUsageLimitResponse()
+  const reservation = await reserveAiUsage(userId, "chat", 100)
+  if (!reservation.allowed) {
+    return reservation.reason === "rate_limit" ? aiRateLimitResponse() : aiUsageLimitResponse()
+  }
 
   const { messages, pantryItems }: { messages: Message[]; pantryItems: PantryItem[] } =
     await req.json()
@@ -64,7 +66,7 @@ Give practical, specific cooking advice. Reference actual items from their pantr
   })
 
   const response = await chat.sendMessage({ message: lastMessage.content })
-  await logAiUsage(userId, "chat")
+  await checkAiUsageAnomaly(userId)
   const reply =
     response.candidates?.[0]?.content?.parts?.[0]?.text ??
     "Sorry, I couldn't generate a response."

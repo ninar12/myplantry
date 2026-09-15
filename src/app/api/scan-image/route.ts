@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getOrCreateUser } from "@/lib/supabase";
 import { getUserPlan, limitReachedResponse } from "@/lib/subscription";
-import { checkAiUsageLimit, logAiUsage, aiUsageLimitResponse } from "@/lib/aiUsage";
+import { reserveAiUsage, checkAiUsageAnomaly, aiUsageLimitResponse, aiRateLimitResponse } from "@/lib/aiUsage";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! });
 
@@ -55,8 +55,10 @@ export async function POST(req: NextRequest) {
   const plan = await getUserPlan(userId);
   if (plan === "free") return limitReachedResponse(plan, null, "scan_image");
 
-  const usageOk = await checkAiUsageLimit(userId, "scan_image", 50);
-  if (!usageOk) return aiUsageLimitResponse();
+  const reservation = await reserveAiUsage(userId, "scan_image", 50);
+  if (!reservation.allowed) {
+    return reservation.reason === "rate_limit" ? aiRateLimitResponse() : aiUsageLimitResponse();
+  }
 
   const { image, mimeType, type } = await req.json();
   const imageType = (type as keyof typeof PROMPTS) ?? "receipt";
@@ -73,7 +75,7 @@ export async function POST(req: NextRequest) {
       },
     ],
   });
-  await logAiUsage(userId, "scan_image");
+  await checkAiUsageAnomaly(userId);
 
   const raw = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
   const parsed = parseAiJsonArray(raw);

@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { supabase, getOrCreateUser } from "@/lib/supabase"
 import { checkLimit, limitReachedResponse } from "@/lib/subscription"
-import { checkAiUsageLimit, logAiUsage, aiUsageLimitResponse } from "@/lib/aiUsage"
+import { reserveAiUsage, checkAiUsageAnomaly, aiUsageLimitResponse, aiRateLimitResponse } from "@/lib/aiUsage"
 
 export const maxDuration = 30
 
@@ -132,8 +132,10 @@ export async function POST(req: NextRequest) {
 }
 
 async function runGemini(userId: string, content: string) {
-  const usageOk = await checkAiUsageLimit(userId, "recipe_import", 50)
-  if (!usageOk) return aiUsageLimitResponse()
+  const reservation = await reserveAiUsage(userId, "recipe_import", 50)
+  if (!reservation.allowed) {
+    return reservation.reason === "rate_limit" ? aiRateLimitResponse() : aiUsageLimitResponse()
+  }
 
   const geminiPrompt = `Extract the recipe from the following content and return ONLY a raw JSON object — no markdown fences, no extra text:
 {
@@ -151,7 +153,7 @@ ${content}`
     model: "gemini-3.1-pro-preview",
     contents: [{ parts: [{ text: geminiPrompt }] }],
   })
-  await logAiUsage(userId, "recipe_import")
+  await checkAiUsageAnomaly(userId)
 
   const raw = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}"
   const parsed = parseAiJsonObject(raw) as {
