@@ -59,17 +59,30 @@ Give practical, specific cooking advice. Reference actual items from their pantr
 
   const lastMessage = messages[messages.length - 1]
 
-  const chat = ai.chats.create({
-    model: "gemini-3.1-pro-preview",
-    config: { systemInstruction },
-    history,
-  })
+  let reply: string
+  try {
+    const chat = ai.chats.create({
+      model: "gemini-3.1-pro-preview",
+      config: { systemInstruction },
+      history,
+    })
 
-  const response = await chat.sendMessage({ message: lastMessage.content })
-  await checkAiUsageAnomaly(userId)
-  const reply =
-    response.candidates?.[0]?.content?.parts?.[0]?.text ??
-    "Sorry, I couldn't generate a response."
+    const response = await chat.sendMessage({ message: lastMessage.content })
+    await checkAiUsageAnomaly(userId)
+    reply =
+      response.candidates?.[0]?.content?.parts?.[0]?.text ??
+      "Sorry, I couldn't generate a response."
+  } catch (e) {
+    // Gemini is intermittently flaky (timeouts, transient 503s, etc.) — without this,
+    // any hiccup here was an uncaught exception that surfaced as a raw 500, which the
+    // frontend couldn't parse as JSON and showed as a generic failure. Now it's a clean,
+    // expected error response instead.
+    console.error("chat Gemini error:", e)
+    return NextResponse.json(
+      { error: "The AI is temporarily unavailable — please try again in a moment." },
+      { status: 503 }
+    )
+  }
 
   // Persist both the user message and assistant reply before returning — on Vercel's
   // serverless runtime, unawaited work isn't guaranteed to complete after the response

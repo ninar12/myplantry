@@ -79,14 +79,26 @@ export default function CookingConsultant({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: newMessages, pantryItems: items }),
       })
+      // Previously this skipped straight to res.json() regardless of status, so a
+      // rate-limit (429) or AI-unavailable (503) response would either render an
+      // undefined message bubble or only hit the catch block if the body happened
+      // not to parse as JSON. Checking res.ok makes the friendly fallback reliable.
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error ?? "chat request failed")
+      }
       const { reply } = await res.json()
       setMessages((prev) => [...prev, { role: "assistant", content: reply }])
-    } catch {
+    } catch (e) {
+      const message =
+        e instanceof Error && e.message && e.message !== "chat request failed"
+          ? e.message
+          : "Sorry, something went wrong. Please try again."
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
+          content: message,
         },
       ])
     } finally {
