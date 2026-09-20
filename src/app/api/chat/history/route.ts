@@ -14,11 +14,13 @@ export async function GET() {
 
   const userId = await getOrCreateUser(session.user.email, session.user.name)
 
+  // Order descending + limit to actually get the most recent 50 (ascending + limit
+  // returns the OLDEST 50 instead), then reverse back to chronological order for the client.
   const { data, error } = await supabase
     .from("chat_messages")
     .select("id, role, content, created_at")
     .eq("user_id", userId)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(50)
 
   if (error) {
@@ -26,7 +28,7 @@ export async function GET() {
     return NextResponse.json({ messages: [] })
   }
 
-  return NextResponse.json({ messages: data ?? [] })
+  return NextResponse.json({ messages: (data ?? []).reverse() })
 }
 
 // DELETE /api/chat/history — clear all chat history for the current user

@@ -13,10 +13,16 @@ interface Message {
   content: string
 }
 
+// Inserts sequentially, not as one batched array insert — Postgres evaluates now()
+// once per statement, so a single multi-row insert gives the user message and its
+// assistant reply the exact same created_at. /api/chat/history sorts by created_at
+// with no secondary tiebreaker, so on a tie the reply can sort before the question
+// it's answering, making the conversation look unanswered when reloaded. Two
+// statements means two distinct timestamps and a stable chronological order.
 async function saveMessages(userId: string, messages: { role: string; content: string }[]) {
-  await supabase.from("chat_messages").insert(
-    messages.map((m) => ({ user_id: userId, role: m.role, content: m.content }))
-  )
+  for (const m of messages) {
+    await supabase.from("chat_messages").insert({ user_id: userId, role: m.role, content: m.content })
+  }
 }
 
 export async function POST(req: NextRequest) {
