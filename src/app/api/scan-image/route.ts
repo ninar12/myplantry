@@ -40,10 +40,10 @@ Each object must have exactly these fields:
                                raw chicken 2, ground beef 2, eggs 21, hard cheese 30,
                                bread 5, cooked grains 5, canned goods 730, pantry staples 365,
                                frozen items 180, condiments 180, beverages 14)
-  "location": string        — where this item is typically stored: "fridge" or "pantry"
+  "location": string        — where this item is typically stored: "fridge", "pantry", or "freezer"
                               (examples: produce/dairy/meat/beverages → "fridge",
                                grains/canned goods/condiments/snacks/pantry staples → "pantry",
-                               frozen items → "fridge")
+                               frozen items → "freezer")
 
 If you cannot confidently identify any items, return an empty array: []`;
 
@@ -89,7 +89,10 @@ export async function POST(req: NextRequest) {
       category: entry.category,
       quantity: entry.quantity,
       expiration_date: new Date(now + shelfLifeDays * 24 * 60 * 60 * 1000).toISOString(),
-      location: entry.location === "pantry" ? "pantry" : "fridge",
+      location:
+        entry.location === "pantry" || entry.location === "freezer"
+          ? entry.location
+          : "fridge",
     };
   });
 
