@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePantry } from "@/context/PantryContext";
 import { PantryItem } from "@/lib/types";
+import { pickShelfLifeDays } from "@/lib/shelfLife";
 import Image from "next/image";
 import {
   Clock, Trash2, PackageOpen, Package, Pencil, FlaskConical,
@@ -240,10 +241,9 @@ export default function PantryList() {
             body: JSON.stringify({ name: item.name }),
           });
           const data = await res.json();
-          const days =
-            item.location === "pantry" ? (data.pantry_days ?? data.fridge_days ?? data.freezer_days ?? 7)
-            : item.location === "freezer" ? (data.freezer_days ?? data.fridge_days ?? data.pantry_days ?? 7)
-            : (data.fridge_days ?? data.pantry_days ?? data.freezer_days ?? 7);
+          // New unit starts fresh — opened resets to false right below, so use that
+          // here too rather than the just-finished unit's (possibly opened) state.
+          const days = pickShelfLifeDays(data, item.location, false);
           expiration_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
         } catch { /* keep existing date */ }
         const safeExpiry = expiration_date.split("T")[0];
@@ -253,7 +253,10 @@ export default function PantryList() {
       removeItem(item.id);
       return;
     }
-    const remaining = parseFloat((item.quantity * (1 - percent / 100)).toFixed(2));
+    // percent is an absolute fraction of one whole unit (e.g. 25% = 0.25), not a
+    // fraction of whatever's currently left — using 25% twice should land at 0.50,
+    // not 0.5625 (25% of the already-reduced 0.75). See NRH-73/NRH-150.
+    const remaining = parseFloat((item.quantity - percent / 100).toFixed(2));
     if (remaining <= 0) removeItem(item.id);
     else updateItem(item.id, { quantity: remaining });
   };

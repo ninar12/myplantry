@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, Receipt, PencilLine, ChevronLeft, Loader2, Sparkles } from "lucide-react";
+import { Camera, Receipt, PencilLine, ChevronLeft, Loader2, Sparkles, Refrigerator, Package, Snowflake } from "lucide-react";
 import { usePantry } from "@/context/PantryContext";
 import PhotoUploadStub from "@/components/PhotoUploadStub";
+import { pickShelfLifeDays, StorageLocation } from "@/lib/shelfLife";
 
 type BulkMode = "image" | "receipt" | "manual";
 
@@ -32,6 +33,7 @@ export default function BulkAddIngredients() {
   const { addItem } = usePantry();
   const [mode, setMode] = useState<BulkMode | null>(null);
   const [text, setText] = useState("");
+  const [location, setLocation] = useState<StorageLocation>("fridge");
   const [isLoading, setIsLoading] = useState(false);
   const [done, setDone] = useState<string[]>([]);
   const [failed, setFailed] = useState<string[]>([]);
@@ -59,14 +61,14 @@ export default function BulkAddIngredients() {
           body: JSON.stringify({ name }),
         });
         const data = await res.json();
-        const days = data.fridge_days ?? data.pantry_days ?? 7;
+        const days = pickShelfLifeDays(data, location, false);
         await addItem({
           name,
           category: data.category ?? "Other",
           quantity: 1,
           opened: false,
           expiration_date: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
-          location: "fridge",
+          location,
         });
         added.push(name);
       } catch {
@@ -132,6 +134,24 @@ export default function BulkAddIngredients() {
           <p className="text-xs text-[#003527]/40 -mt-1">
             AI will auto-detect category and expiry for each item.
           </p>
+          <div className="flex items-center gap-0.5 rounded-full border border-[#003527]/15 p-0.5 w-fit">
+            {([
+              ["fridge", Refrigerator, "Fridge"],
+              ["pantry", Package, "Pantry"],
+              ["freezer", Snowflake, "Freezer"],
+            ] as const).map(([loc, Icon, label]) => (
+              <button
+                key={loc}
+                type="button"
+                onClick={() => setLocation(loc)}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                  location === loc ? "bg-[#2b6954] text-white shadow-sm" : "text-[#003527]/60 hover:text-[#003527]"
+                }`}
+              >
+                <Icon className="w-3 h-3" /> {label}
+              </button>
+            ))}
+          </div>
           <button
             type="submit"
             disabled={!text.trim() || isLoading}
