@@ -17,13 +17,21 @@ function classifyItem(name: string): string {
     [["milk","cheese","yogurt","butter","cream","sour cream","cream cheese","cottage cheese","half and half","heavy cream","kefir","buttermilk","cheddar","mozzarella","parmesan","brie","gouda","feta","swiss","provolone","ricotta","egg","eggs","dairy","oat milk","almond milk","soy milk"], "Dairy"],
     [["chicken","beef","pork","turkey","lamb","duck","ground beef","ground turkey","steak","bacon","sausage","ham","salami","pepperoni","prosciutto","deli","hot dog","bratwurst","chorizo","brisket","ribs","lunchmeat","salmon","tuna","shrimp","fish","cod","tilapia","halibut","sardine","anchovy","crab","lobster","scallop","oyster","clam","mussels","squid","meat","seafood","poultry"], "Meat"],
     [["bread","rice","pasta","flour","oat","oatmeal","cereal","quinoa","barley","farro","tortilla","wrap","bagel","english muffin","pita","noodle","ramen","couscous","couscous","bulgur","polenta","cornmeal","cracker","granola","grains","wheat","sourdough","baguette"], "Grains"],
-    [["canned","soup","beans","lentils","chickpeas","tomato sauce","tomato paste","coconut milk","broth","stock","diced tomatoes","crushed tomatoes","tomato can","bean","lentil","chickpea"], "Canned Goods"],
+    [["canned","soup","beans","lentils","chickpeas","tomato sauce","tomato paste","coconut milk","broth","stock","diced tomatoes","crushed tomatoes","tomato can","bean","lentil","chickpea","butter beans"], "Canned Goods"],
     [["oil","olive oil","vegetable oil","vinegar","soy sauce","hot sauce","ketchup","mustard","mayo","mayonnaise","relish","pickle","jam","jelly","honey","syrup","peanut butter","almond butter","tahini","hummus","dressing","aioli","bbq sauce","ranch","balsamic","sesame oil","sugar","salt","pepper","spice","seasoning","baking powder","baking soda","yeast","vanilla","cinnamon","paprika","cumin","turmeric","oregano","thyme","rosemary","chili powder","cayenne","nutmeg","cocoa","chocolate chips","cornstarch","bread crumbs","frozen","ice cream","chip","chips","popcorn","pretzel","cookie","candy","chocolate","nut","almonds","cashews","walnuts","peanuts","trail mix","dried fruit","jerky","protein bar","granola bar","water","juice","soda","coffee","tea","kombucha","lemonade","wine","beer","energy drink","sports drink"], "Pantry"],
   ];
+  // Compound ingredient names (e.g. "butter beans", "peanut butter") can contain a keyword
+  // for the wrong category as a substring — pick the longest matching keyword across all
+  // rules rather than the first rule in array order, so the more specific match wins.
+  let best: { keyword: string; category: string } | null = null;
   for (const [keywords, cat] of rules) {
-    if (keywords.some(k => n.includes(k))) return cat;
+    for (const k of keywords) {
+      if (n.includes(k) && (!best || k.length > best.keyword.length)) {
+        best = { keyword: k, category: cat };
+      }
+    }
   }
-  return "Other";
+  return best?.category ?? "Other";
 }
 
 const CATEGORY_ICON: Record<string, React.ElementType> = {
