@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { usePantry } from "@/context/PantryContext";
+import { fetchShelfLife } from "@/lib/shelfLife";
 import Image from "next/image";
 import {
   Plus, Tag, Trash2, Loader2, CheckCircle2,
@@ -34,6 +35,20 @@ function classifyItem(name: string): string {
   return best?.category ?? "Other";
 }
 
+// /api/shelf-life classifies against a broader, AI-backed 9-value taxonomy (see the
+// prompt in src/app/api/shelf-life/route.ts) — map it down to this list's categories.
+const SHELF_LIFE_CATEGORY_MAP: Record<string, string> = {
+  "Produce": "Produce",
+  "Dairy": "Dairy",
+  "Meat & Seafood": "Meat",
+  "Grains & Bread": "Grains",
+  "Canned & Jarred": "Canned Goods",
+  "Condiments": "Pantry",
+  "Beverages": "Pantry",
+  "Pantry Staples": "Pantry",
+  "Other": "Other",
+};
+
 const CATEGORY_ICON: Record<string, React.ElementType> = {
   Produce:       Apple,
   Dairy:         Milk,
@@ -59,10 +74,31 @@ export default function GroceryList() {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("Other");
   const [categoryManuallySet, setCategoryManuallySet] = useState(false);
+  // Mirrors categoryManuallySet for the debounced classifier below, which reads it
+  // from inside a setTimeout closure where the state value would otherwise be stale.
+  const categoryManuallySetRef = useRef(false);
   const [isAdding, setIsAdding] = useState(false);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [pendingItem, setPendingItem] = useState<{ name: string; category: string } | null>(null);
   const [duplicateInfo, setDuplicateInfo] = useState<{ name: string; daysLeft: number } | null>(null);
+
+  // classifyItem() gives an instant local guess so the category dropdown isn't blank
+  // while typing; this debounced AI lookup corrects it shortly after typing stops,
+  // the same recalc-token pattern PantryList uses so a stale response can't clobber
+  // a newer one (or a category the user has since set manually).
+  const classifyTokenRef = useRef(0);
+  const classifyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const classifyItemDebounced = (itemName: string) => {
+    if (classifyDebounceRef.current) clearTimeout(classifyDebounceRef.current);
+    if (!itemName.trim()) return;
+    const token = ++classifyTokenRef.current;
+    classifyDebounceRef.current = setTimeout(async () => {
+      const data = await fetchShelfLife(itemName);
+      if (!data || token !== classifyTokenRef.current || categoryManuallySetRef.current) return;
+      setCategory(SHELF_LIFE_CATEGORY_MAP[data.category ?? "Other"] ?? "Other");
+    }, 500);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +125,7 @@ export default function GroceryList() {
     setName("");
     setCategory("Other");
     setCategoryManuallySet(false);
+    categoryManuallySetRef.current = false;
     setIsAdding(false);
   };
 
@@ -151,7 +188,10 @@ export default function GroceryList() {
                 value={name}
                 onChange={e => {
                   setName(e.target.value);
-                  if (!categoryManuallySet) setCategory(classifyItem(e.target.value));
+                  if (!categoryManuallySet) {
+                    setCategory(classifyItem(e.target.value));
+                    classifyItemDebounced(e.target.value);
+                  }
                 }}
                 placeholder="Add a new item to your list..."
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
@@ -166,7 +206,7 @@ export default function GroceryList() {
                 <Tag className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#707974" }} />
                 <select
                   value={category}
-                  onChange={e => { setCategory(e.target.value); setCategoryManuallySet(true); }}
+                  onChange={e => { setCategory(e.target.value); setCategoryManuallySet(true); categoryManuallySetRef.current = true; }}
                   className="text-sm bg-transparent outline-none cursor-pointer pr-1"
                   style={{ color: "#404944" }}
                 >
