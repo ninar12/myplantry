@@ -5,7 +5,37 @@ export type ShelfLifeLookup = {
   opened_fridge_days?: number | null;
 };
 
+export type ShelfLifeResponse = ShelfLifeLookup & {
+  category?: string;
+  tips?: string | null;
+};
+
 export type StorageLocation = "fridge" | "pantry" | "freezer";
+
+/**
+ * Calls /api/shelf-life and returns the parsed result, or null if the lookup
+ * failed for any reason: network error, non-2xx status, or an `{ error }`
+ * body (e.g. aiRateLimitResponse/aiUsageLimitResponse, which have no
+ * fridge_days/category fields at all). Callers must treat null as "unknown"
+ * and leave whatever data they already had alone — NOT plug the response's
+ * (all-undefined) fields into the usual `?? 7` fallback chains, which
+ * silently produces a fake-looking "7 day, Other category" answer
+ * indistinguishable from a real one.
+ */
+export async function fetchShelfLife(name: string): Promise<ShelfLifeResponse | null> {
+  try {
+    const res = await fetch("/api/shelf-life", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (!res.ok || data?.error) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Picks the number of days until expiry for a pantry item, given a /api/shelf-life

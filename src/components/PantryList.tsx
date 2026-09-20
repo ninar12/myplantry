@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePantry } from "@/context/PantryContext";
 import { PantryItem } from "@/lib/types";
-import { pickShelfLifeDays } from "@/lib/shelfLife";
+import { fetchShelfLife, pickShelfLifeDays } from "@/lib/shelfLife";
 import Image from "next/image";
 import {
   Clock, Trash2, PackageOpen, Package, Pencil, FlaskConical,
@@ -234,18 +234,13 @@ export default function PantryList() {
       if (item.quantity > 1) {
         // Move to next unit: decrement quantity, reset opened, recalculate expiry
         let expiration_date = item.expiration_date;
-        try {
-          const res = await fetch("/api/shelf-life", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: item.name }),
-          });
-          const data = await res.json();
+        const data = await fetchShelfLife(item.name);
+        if (data) {
           // New unit starts fresh — opened resets to false right below, so use that
           // here too rather than the just-finished unit's (possibly opened) state.
           const days = pickShelfLifeDays(data, item.location, false);
           expiration_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-        } catch { /* keep existing date */ }
+        } // else: lookup failed — keep existing date
         const safeExpiry = expiration_date.split("T")[0];
         await updateItem(item.id, { quantity: item.quantity - 1, opened: false, expiration_date: safeExpiry });
         return;
@@ -272,24 +267,18 @@ export default function PantryList() {
     const token = ++recalcTokenRef.current;
     setIsRecalculating(true);
     try {
-      const res = await fetch("/api/shelf-life", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      const data = await res.json();
+      const data = await fetchShelfLife(name);
       if (token !== recalcTokenRef.current) return; // superseded by a newer recalc
-      const bestFallback = data.fridge_days ?? data.pantry_days ?? data.freezer_days ?? 7;
-      const days =
-        location === "pantry"  ? (data.pantry_days  ?? data.fridge_days  ?? data.freezer_days ?? 7)
-        : location === "freezer" ? (data.freezer_days ?? data.fridge_days  ?? data.pantry_days  ?? 7)
-        : (opened && data.opened_fridge_days != null ? data.opened_fridge_days : (data.fridge_days ?? bestFallback));
-      const expiration_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
-      setEditForm((f) => ({ ...f, expiration_date }));
-    } catch { /* leave existing date */ }
-    finally { if (token === recalcTokenRef.current) setIsRecalculating(false); }
+      if (data) {
+        const days = pickShelfLifeDays(data, location, opened);
+        const expiration_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0];
+        setEditForm((f) => ({ ...f, expiration_date }));
+      } // else: lookup failed — leave existing date
+    } finally {
+      if (token === recalcTokenRef.current) setIsRecalculating(false);
+    }
   };
 
   // Name recalc is triggered on every keystroke — debounce it so we're not firing a

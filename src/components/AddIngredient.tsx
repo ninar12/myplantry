@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Sparkles, Calendar, AlertTriangle, PackageOpen, Refrigerator, Package, Snowflake } from "lucide-react";
 import { usePantry } from "@/context/PantryContext";
 import { PantryItem } from "@/lib/types";
+import { fetchShelfLife, pickShelfLifeDays } from "@/lib/shelfLife";
 
 type ExpiryMode = "auto" | "manual";
 type Location = "fridge" | "pantry" | "freezer";
@@ -23,29 +24,18 @@ export default function AddIngredient() {
     duplicate: PantryItem;
   } | null>(null);
 
-  const resolveShelfLife = async (itemName: string): Promise<{ expiration_date: string; category: string }> => {
-    try {
-      const res = await fetch("/api/shelf-life", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: itemName }),
-      });
-      const data = await res.json();
-      const bestFallback = data.fridge_days ?? data.pantry_days ?? data.freezer_days ?? 7;
-      const days =
-        location === "pantry" ? (data.pantry_days ?? data.fridge_days ?? data.freezer_days ?? 7)
-        : location === "freezer" ? (data.freezer_days ?? data.fridge_days ?? data.pantry_days ?? 7)
-        : (opened && data.opened_fridge_days != null ? data.opened_fridge_days : (data.fridge_days ?? bestFallback));
-      return {
-        expiration_date: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
-        category: data.category ?? "Other",
-      };
-    } catch {
-      return {
-        expiration_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        category: "Other",
-      };
-    }
+  // Returns null when the lookup genuinely failed (network error, rate-limited,
+  // etc.) rather than silently returning the generic 7-day/Other fallback as if
+  // it were a real answer — callers should leave the placeholder date/category
+  // in place rather than overwrite it with an unverified guess.
+  const resolveShelfLife = async (itemName: string): Promise<{ expiration_date: string; category: string } | null> => {
+    const data = await fetchShelfLife(itemName);
+    if (!data) return null;
+    const days = pickShelfLifeDays(data, location, opened);
+    return {
+      expiration_date: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
+      category: data.category ?? "Other",
+    };
   };
 
   const doAdd = async (itemName: string, mode: ExpiryMode, date: string) => {
@@ -75,7 +65,9 @@ export default function AddIngredient() {
     // Resolve real shelf life in background and update the item
     if (added?.id) {
       const id = added.id;
-      resolveShelfLife(itemName).then(({ expiration_date: realExpiry, category }) => {
+      resolveShelfLife(itemName).then((resolved) => {
+        if (!resolved) return; // lookup failed — keep the placeholder rather than fake it
+        const { expiration_date: realExpiry, category } = resolved;
         const updates: Partial<Omit<PantryItem, "id">> = { category };
         if (mode !== "manual" || !date) updates.expiration_date = realExpiry;
         updateItem(id, updates);

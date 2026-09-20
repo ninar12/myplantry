@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Camera, Receipt, PencilLine, ChevronLeft, Loader2, Sparkles, Refrigerator, Package, Snowflake } from "lucide-react";
 import { usePantry } from "@/context/PantryContext";
 import PhotoUploadStub from "@/components/PhotoUploadStub";
-import { pickShelfLifeDays, StorageLocation } from "@/lib/shelfLife";
+import { fetchShelfLife, pickShelfLifeDays, StorageLocation } from "@/lib/shelfLife";
 
 type BulkMode = "image" | "receipt" | "manual";
 
@@ -55,16 +55,14 @@ export default function BulkAddIngredients() {
 
     for (const name of names) {
       try {
-        const res = await fetch("/api/shelf-life", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
-        });
-        const data = await res.json();
-        const days = pickShelfLifeDays(data, location, false);
+        // A failed lookup (rate-limited, network error, etc.) still lets us add
+        // the item — we just fall back to defaults instead of the unverified
+        // (all-undefined) fields a failure response would otherwise produce.
+        const data = await fetchShelfLife(name);
+        const days = data ? pickShelfLifeDays(data, location, false) : 7;
         await addItem({
           name,
-          category: data.category ?? "Other",
+          category: data?.category ?? "Other",
           quantity: 1,
           opened: false,
           expiration_date: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
