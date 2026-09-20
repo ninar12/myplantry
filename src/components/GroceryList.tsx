@@ -89,10 +89,19 @@ export default function GroceryList() {
   const classifyTokenRef = useRef(0);
   const classifyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const classifyItemDebounced = (itemName: string) => {
+  const cancelPendingClassify = () => {
     if (classifyDebounceRef.current) clearTimeout(classifyDebounceRef.current);
+    classifyTokenRef.current++; // invalidate any in-flight lookup too
+  };
+
+  const classifyItemDebounced = (itemName: string) => {
+    cancelPendingClassify();
     if (!itemName.trim()) return;
-    const token = ++classifyTokenRef.current;
+    // The static guess is already confident (matched a real keyword, not the "no
+    // match" default) — skip the network/AI round trip entirely for the common case
+    // and only spend it correcting genuine unknowns.
+    if (classifyItem(itemName) !== "Other") return;
+    const token = classifyTokenRef.current;
     classifyDebounceRef.current = setTimeout(async () => {
       const data = await fetchShelfLife(itemName);
       if (!data || token !== classifyTokenRef.current || categoryManuallySetRef.current) return;
@@ -118,6 +127,10 @@ export default function GroceryList() {
   };
 
   const doAdd = async (itemName: string, itemCategory: string) => {
+    // Without this, a classification still in flight for the item just submitted
+    // could resolve after the form below resets and land on whatever the user has
+    // since typed for the next item.
+    cancelPendingClassify();
     setIsAdding(true);
     setPendingItem(null);
     setDuplicateInfo(null);
@@ -236,7 +249,7 @@ export default function GroceryList() {
                     style={{ background: "#1d4ed8", color: "#ffffff" }}
                   >Add anyway</button>
                   <button
-                    onClick={() => { setPendingItem(null); setDuplicateInfo(null); setName(""); }}
+                    onClick={() => { cancelPendingClassify(); setPendingItem(null); setDuplicateInfo(null); setName(""); }}
                     className="px-3 py-1 rounded-lg text-xs font-semibold"
                     style={{ border: "1px solid #93c5fd", color: "#1e40af" }}
                   >Skip</button>
