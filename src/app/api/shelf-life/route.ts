@@ -4,19 +4,24 @@ import { createClient } from "@supabase/supabase-js"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getOrCreateUser } from "@/lib/supabase"
-import { reserveAiUsage, checkAiUsageAnomaly, aiUsageLimitResponse, aiRateLimitResponse } from "@/lib/aiUsage"
+import {
+  reserveAiUsage,
+  checkAiUsageAnomaly,
+  aiUsageLimitResponse,
+  aiRateLimitResponse,
+} from "@/lib/aiUsage"
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! })
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
 const FALLBACK = {
   fridge_days: 7,
   pantry_days: null,
-  freezer_days: null,
+  freezer_days: 50,
   opened_fridge_days: null,
   category: "Other",
   tips: null,
@@ -79,13 +84,14 @@ async function cacheResult(name: string, data: Record<string, unknown>) {
       tips: data.tips ?? null,
       source: "gemini",
     },
-    { onConflict: "name" }
+    { onConflict: "name" },
   )
 }
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!session?.user?.email)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const userId = await getOrCreateUser(session.user.email, session.user.name)
 
   const { name } = await req.json()
@@ -104,7 +110,9 @@ export async function POST(req: NextRequest) {
   // --- Usage gate before the Gemini fallback tier ---
   const reservation = await reserveAiUsage(userId, "shelf_life", 200)
   if (!reservation.allowed) {
-    return reservation.reason === "rate_limit" ? aiRateLimitResponse() : aiUsageLimitResponse()
+    return reservation.reason === "rate_limit"
+      ? aiRateLimitResponse()
+      : aiUsageLimitResponse()
   }
 
   // --- Tier 2: Gemini fallback ---
@@ -114,7 +122,7 @@ export async function POST(req: NextRequest) {
 
     // --- Tier 3: Cache back (fire and forget) ---
     cacheResult(name, geminiResult).catch((e) =>
-      console.error("shelf-life cache error:", e)
+      console.error("shelf-life cache error:", e),
     )
 
     return NextResponse.json(geminiResult)
